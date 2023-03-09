@@ -6,6 +6,6 @@ RUN apt-get update && \
 COPY . /anteus
 WORKDIR /anteus
 
-EXPOSE 7000
+EXPOSE 8080
 # When the container starts: build, test and run the app.
 CMD ./gradlew build && ./gradlew test && ./gradlew run
