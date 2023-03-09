@@ -8,16 +8,16 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class InvoiceServiceTest {
-    private val dal = mockk<AntaeusDal> {
-        every { fetchInvoice(404) } returns null
-    }
+  private val dal = mockk<AntaeusDal> {
+    every { fetchInvoice(404) } returns null
+  }
 
-    private val invoiceService = InvoiceService(dal = dal)
+  private val invoiceService = InvoiceService(dal = dal)
 
-    @Test
-    fun `will throw if invoice is not found`() {
-        assertThrows<InvoiceNotFoundException> {
-            invoiceService.fetch(404)
-        }
+  @Test
+  fun `will throw if invoice is not found`() {
+    assertThrows<InvoiceNotFoundException> {
+      invoiceService.fetch(404)
     }
+  }
 }

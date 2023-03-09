@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm")
+  kotlin("jvm")
 }
 
 kotlinProject()
@@ -7,5 +7,5 @@ kotlinProject()
 dataLibs()
 
 dependencies {
-    api(project(":pleo-antaeus-models"))
+  api(project(":pleo-antaeus-models"))
 }
