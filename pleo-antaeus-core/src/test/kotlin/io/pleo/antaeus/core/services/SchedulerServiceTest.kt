@@ -11,7 +11,6 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.extension.ExtendWith
 
 @ExtendWith(MockKExtension::class)
-@MockKExtension.ConfirmVerification
 @MockKExtension.CheckUnnecessaryStub
 class SchedulerServiceTest {
 
@@ -36,13 +35,26 @@ class SchedulerServiceTest {
 
       // when
       assertDoesNotThrow { underTest.start() }
-      // TODO find a better way instead of sleeping the thread
-      Thread.sleep(1000)
 
       // then
       verify { delaySupplier() }
-      coVerify { billingService.performBilling() }
+      coVerify(timeout = 1500) { billingService.performBilling() }
     }
+
+    @Test
+    fun `should not throw exception if performBilling throws exception`() {
+      // given
+      every { delaySupplier() } returns 1
+      coEvery { billingService.performBilling() } throws RuntimeException("some exception")
+
+      // when
+      assertDoesNotThrow { underTest.start() }
+
+      // then
+      verify { delaySupplier() }
+      coVerify(timeout = 1500) { billingService.performBilling() }
+    }
+
   }
 
 }
