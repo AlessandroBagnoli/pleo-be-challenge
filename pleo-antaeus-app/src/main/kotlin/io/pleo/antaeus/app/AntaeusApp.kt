@@ -26,46 +26,48 @@ import java.io.File
 import java.sql.Connection
 
 fun main() {
-    // The tables to create in the database.
-    val tables = arrayOf(InvoiceTable, CustomerTable)
+  // The tables to create in the database.
+  val tables = arrayOf(InvoiceTable, CustomerTable)
 
-    val dbFile: File = File.createTempFile("antaeus-db", ".sqlite")
-    // Connect to the database and create the needed tables. Drop any existing data.
-    val db = Database
-        .connect(url = "jdbc:sqlite:${dbFile.absolutePath}",
-            driver = "org.sqlite.JDBC",
-            user = "root",
-            password = "")
-        .also {
-            TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
-            transaction(it) {
-                addLogger(StdOutSqlLogger)
-                // Drop all existing tables to ensure a clean slate on each run
-                SchemaUtils.drop(*tables)
-                // Create all tables
-                SchemaUtils.create(*tables)
-            }
-        }
+  val dbFile: File = File.createTempFile("antaeus-db", ".sqlite")
+  // Connect to the database and create the needed tables. Drop any existing data.
+  val db = Database
+    .connect(
+      url = "jdbc:sqlite:${dbFile.absolutePath}",
+      driver = "org.sqlite.JDBC",
+      user = "root",
+      password = ""
+    )
+    .also {
+      TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
+      transaction(it) {
+        addLogger(StdOutSqlLogger)
+        // Drop all existing tables to ensure a clean slate on each run
+        SchemaUtils.drop(*tables)
+        // Create all tables
+        SchemaUtils.create(*tables)
+      }
+    }
 
-    // Set up data access layer.
-    val dal = AntaeusDal(db = db)
+  // Set up data access layer.
+  val dal = AntaeusDal(db = db)
 
-    // Insert example data in the database.
-    setupInitialData(dal = dal)
+  // Insert example data in the database.
+  setupInitialData(dal = dal)
 
-    // Get third parties
-    val paymentProvider = getPaymentProvider()
+  // Get third parties
+  val paymentProvider = getPaymentProvider()
 
-    // Create core services
-    val invoiceService = InvoiceService(dal = dal)
-    val customerService = CustomerService(dal = dal)
+  // Create core services
+  val invoiceService = InvoiceService(dal = dal)
+  val customerService = CustomerService(dal = dal)
 
-    // This is _your_ billing service to be included where you see fit
-    val billingService = BillingService(paymentProvider = paymentProvider)
+  // This is _your_ billing service to be included where you see fit
+  val billingService = BillingService(paymentProvider = paymentProvider)
 
-    // Create REST web service
-    AntaeusRest(
-        invoiceService = invoiceService,
-        customerService = customerService
-    ).run()
+  // Create REST web service
+  AntaeusRest(
+    invoiceService = invoiceService,
+    customerService = customerService
+  ).run()
 }

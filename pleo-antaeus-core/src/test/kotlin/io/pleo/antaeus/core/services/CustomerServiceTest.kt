@@ -8,16 +8,16 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class CustomerServiceTest {
-    private val dal = mockk<AntaeusDal> {
-        every { fetchCustomer(404) } returns null
-    }
+  private val dal = mockk<AntaeusDal> {
+    every { fetchCustomer(404) } returns null
+  }
 
-    private val customerService = CustomerService(dal = dal)
+  private val customerService = CustomerService(dal = dal)
 
-    @Test
-    fun `will throw if customer is not found`() {
-        assertThrows<CustomerNotFoundException> {
-            customerService.fetch(404)
-        }
+  @Test
+  fun `will throw if customer is not found`() {
+    assertThrows<CustomerNotFoundException> {
+      customerService.fetch(404)
     }
+  }
 }
