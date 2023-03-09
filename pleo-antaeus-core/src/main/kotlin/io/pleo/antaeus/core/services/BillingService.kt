@@ -20,38 +20,42 @@ class BillingService(
     invoiceService.fetchByStatus(InvoiceStatus.PENDING)
       .also { log.info { "Found ${it.size} invoices in PENDING status to process" } }
       .forEach { invoice ->
-        val charged = try {
-          paymentProvider.charge(invoice)
+        try {
+          val charged = paymentProvider.charge(invoice)
+          if (charged) {
+            invoiceService.updateStatus(invoice.id, InvoiceStatus.PAID).also {
+              log.info { "Customer account ${invoice.customerId} charged the given amount for invoice ${invoice.id}" }
+            }
+            return
+          }
+
+          invoiceService.updateStatus(invoice.id, InvoiceStatus.RETRY)
+            .also { log.info { "Customer account ${invoice.customerId} balance did not allow the charge for invoice ${invoice.id}" } }
         } catch (ex: Exception) {
           when (ex) {
-            // TODO log everything at error level?
             is CurrencyMismatchException -> {
-              log.error(ex) { "Currency and customer account mismatch during charge of invoice ${invoice.id} for customer ${invoice.customerId}" }
+              invoiceService.updateStatus(invoice.id, InvoiceStatus.FAILED)
+                .also { log.error(ex) { "Currency and customer account mismatch during charge of invoice ${invoice.id} for customer ${invoice.customerId}" } }
             }
 
             is CustomerNotFoundException -> {
-              log.error(ex) { "Customer with id ${invoice.customerId} not found during charge of invoice ${invoice.id}" }
+              invoiceService.updateStatus(invoice.id, InvoiceStatus.FAILED)
+                .also { log.error(ex) { "Customer with id ${invoice.customerId} not found during charge of invoice ${invoice.id}" } }
             }
 
             is NetworkException -> {
-              log.error(ex) { "Network error happened during charge of invoice ${invoice.id} for customer ${invoice.customerId}" }
+              invoiceService.updateStatus(invoice.id, InvoiceStatus.RETRY)
+                .also { log.warn(ex) { "Network error happened during charge of invoice ${invoice.id} for customer ${invoice.customerId}" } }
+            }
+
+            else -> {
+              invoiceService.updateStatus(invoice.id, InvoiceStatus.RETRY)
+                .also { log.error(ex) { "Unknown exception during charge of invoice ${invoice.id} for customer ${invoice.customerId}" } }
             }
           }
-
-          false
         }
-
-        // TODO introduce a new status for retry/unrecoverable error?
-        if (charged) {
-          invoiceService.updateStatus(invoice.id, InvoiceStatus.PAID).also {
-            log.info { "Customer account ${invoice.customerId} charged the given amount for invoice ${invoice.id}" }
-          }
-          return
-        }
-
-        log.info { "Customer ${invoice.customerId} charged for invoice ${invoice.id}" }
-
       }
+      .also { log.info { "Ended billing process" } }
   }
 
 }
