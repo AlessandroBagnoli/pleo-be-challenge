@@ -7,6 +7,7 @@
 
 package io.pleo.antaeus.app
 
+import everyFirstDayOfTheMonth
 import getPaymentProvider
 import io.pleo.antaeus.core.services.BillingService
 import io.pleo.antaeus.core.services.CustomerService
@@ -25,6 +26,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import setupInitialData
 import java.io.File
 import java.sql.Connection
+import java.time.Clock
 
 fun main() {
   // The tables to create in the database.
@@ -67,7 +69,8 @@ fun main() {
   val billingService = BillingService(paymentProvider = paymentProvider, invoiceService = invoiceService)
 
   // Scheduler service
-  val schedulerService = SchedulerService(billingService = billingService)
+  val schedulerService =
+    SchedulerService(billingService = billingService, delaySupplier = { everyFirstDayOfTheMonth(Clock.systemUTC()) })
   schedulerService.start()
 
   // Create REST web service

@@ -7,8 +7,16 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 
 class SchedulerService(
-  private val billingService: BillingService
+  private val billingService: BillingService,
+  /**
+   * Function that returns the delay in seconds between each execution
+   */
+  private val delaySupplier: () -> Long
 ) {
+
+  companion object {
+    private const val MILLISECONDS_IN_SEC = 1000
+  }
 
   private val log = KotlinLogging.logger {}
 
@@ -16,10 +24,9 @@ class SchedulerService(
     log.info { "Starting SchedulerService" }
     CoroutineScope(Dispatchers.Default).launch {
       while (true) {
-        delay(1000) // Wait until the first day of next month
-        // Code to run every first of the month goes here
-        log.info { "Running task on the first of the month" }
-        billingService.performBilling()
+        delay(delaySupplier() * MILLISECONDS_IN_SEC)
+        launch { billingService.performBilling() }
+        log.info { "Launched billing process" }
       }
     }
   }
