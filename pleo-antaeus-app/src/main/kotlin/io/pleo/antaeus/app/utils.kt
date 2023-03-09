@@ -6,8 +6,9 @@ import io.pleo.antaeus.models.InvoiceStatus
 import io.pleo.antaeus.models.Money
 import java.math.BigDecimal
 import java.time.Clock
+import java.time.Duration
 import java.time.LocalDateTime
-import java.time.temporal.TemporalAdjusters
+import java.time.temporal.TemporalAdjusters.firstDayOfNextMonth
 import kotlin.random.Random
 
 // This will create all schemas and setup initial data
@@ -41,16 +42,14 @@ internal fun getPaymentProvider(): PaymentProvider {
   }
 }
 
-// This calculates the time in seconds between now and the next first day of the month
+// This calculates the time in seconds between now and the next first day of the month at midnight
 internal fun everyFirstDayOfTheMonth(clock: Clock): Long {
   // Get the current date and time
-  val now = LocalDateTime.now(clock)
+  val currentDateTime = LocalDateTime.now(clock)
 
-  // Get the first day of the next month
-  val firstDayOfNextMonth = now.with(TemporalAdjusters.firstDayOfNextMonth())
-
-  val offset = clock.zone.rules.getOffset(now)
+  // Get the first day of the next month at start of day
+  val firstDayOfNextMonth = currentDateTime.with(firstDayOfNextMonth()).toLocalDate().atStartOfDay()
 
   // Calculate the delay until the first day of the next month
-  return firstDayOfNextMonth.toLocalDate().atStartOfDay().toEpochSecond(offset) - now.toEpochSecond(offset)
+  return Duration.between(currentDateTime, firstDayOfNextMonth).toSeconds()
 }
