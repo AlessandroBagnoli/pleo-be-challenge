@@ -13,7 +13,6 @@ import io.pleo.antaeus.core.services.InvoiceService
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
-private val thisFile: () -> Unit = {}
 
 class AntaeusRest(
   private val invoiceService: InvoiceService,
@@ -61,8 +60,8 @@ class AntaeusRest(
               it.json(invoiceService.fetchAll())
             }
 
-            // URL: /rest/v1/invoices/{:id}
-            get(":id") {
+            // URL: /rest/v1/invoices/{id}
+            get("{id}") {
               it.json(invoiceService.fetch(it.pathParam("id").toInt()))
             }
           }
@@ -73,8 +72,8 @@ class AntaeusRest(
               it.json(customerService.fetchAll())
             }
 
-            // URL: /rest/v1/customers/{:id}
-            get(":id") {
+            // URL: /rest/v1/customers/{id}
+            get("{id}") {
               it.json(customerService.fetch(it.pathParam("id").toInt()))
             }
           }
