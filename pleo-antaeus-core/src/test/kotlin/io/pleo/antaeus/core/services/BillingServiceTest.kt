@@ -14,6 +14,8 @@ import io.pleo.antaeus.models.Currency
 import io.pleo.antaeus.models.Invoice
 import io.pleo.antaeus.models.InvoiceStatus
 import io.pleo.antaeus.models.Money
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -27,6 +29,7 @@ import java.math.BigDecimal
 @ExtendWith(MockKExtension::class)
 @MockKExtension.ConfirmVerification
 @MockKExtension.CheckUnnecessaryStub
+@OptIn(ExperimentalCoroutinesApi::class)
 class BillingServiceTest {
 
   @MockK
@@ -50,7 +53,7 @@ class BillingServiceTest {
   inner class PerformBilling {
 
     @Test
-    fun `should do nothing when no invoices in pending status`() {
+    fun `should do nothing when no invoices in pending status`() = runTest {
       // given
       every { invoiceService.fetchByStatus(InvoiceStatus.PENDING) } returns emptyList()
 
@@ -62,7 +65,7 @@ class BillingServiceTest {
     }
 
     @Test
-    fun `should set status to PAID when provider charges correctly`() {
+    fun `should set status to PAID when provider charges correctly`() = runTest {
       // given
       every { invoiceService.fetchByStatus(InvoiceStatus.PENDING) } returns listOf(dummyInvoice)
       every { paymentProvider.charge(dummyInvoice) } returns true
@@ -80,7 +83,7 @@ class BillingServiceTest {
     }
 
     @Test
-    fun `should set status to RETRY when provider does not charge`() {
+    fun `should set status to RETRY when provider does not charge`() = runTest {
       // given
       every { invoiceService.fetchByStatus(InvoiceStatus.PENDING) } returns listOf(dummyInvoice)
       every { paymentProvider.charge(dummyInvoice) } returns false
@@ -101,7 +104,7 @@ class BillingServiceTest {
     @MethodSource("io.pleo.antaeus.core.services.BillingServiceTest#exceptions for FAILED")
     fun `should set status to FAILED when provider throws CurrencyMismatchException or CustomerNotFoundException`(
       exception: Exception
-    ) {
+    ) = runTest {
       // given
       every { invoiceService.fetchByStatus(InvoiceStatus.PENDING) } returns listOf(dummyInvoice)
       every { paymentProvider.charge(dummyInvoice) } throws exception
@@ -122,7 +125,7 @@ class BillingServiceTest {
     @MethodSource("io.pleo.antaeus.core.services.BillingServiceTest#exceptions for RETRY")
     fun `should set status to RETRY when provider throws NetworkException or any other generic exception`(
       exception: Exception
-    ) {
+    ) = runTest {
       // given
       every { invoiceService.fetchByStatus(InvoiceStatus.PENDING) } returns listOf(dummyInvoice)
       every { paymentProvider.charge(dummyInvoice) } throws exception
