@@ -3,7 +3,7 @@ curl --location 'http://pubsub:8085/v1/projects/pleo/topics/billing_trigger:publ
   --data '{
       "messages": [
           {
-              "data": "dGVzdCBtZXNzYWdl"
+              "data": "UEVORElORw=="
           }
       ]
   }'

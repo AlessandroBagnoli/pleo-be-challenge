@@ -7,7 +7,8 @@ import io.pleo.antaeus.core.exceptions.NetworkException
 import io.pleo.antaeus.core.external.PaymentProvider
 import io.pleo.antaeus.models.Invoice
 import io.pleo.antaeus.models.InvoiceStatus
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
@@ -20,13 +21,19 @@ class BillingService(
 
   private val log = KotlinLogging.logger {}
 
-  suspend fun performBilling() = coroutineScope {
-    log.info { "Started billing process" }
-    invoiceService.fetchByStatus(InvoiceStatus.PENDING)
-      .also { log.info { "Found ${it.size} invoices in PENDING status to process" } }
-      .map { launch { process(it) } }
-      .joinAll()
-    log.info { "Ended billing process" }
+  fun processPending() = performForStatus(InvoiceStatus.PENDING)
+
+  fun processRetry() = performForStatus(InvoiceStatus.RETRY)
+
+  private fun performForStatus(status: InvoiceStatus) {
+    CoroutineScope(Dispatchers.Default).launch {
+      log.info { "Started billing process" }
+      invoiceService.fetchByStatus(status)
+        .also { log.info { "Found ${it.size} invoices in $status status to process" } }
+        .map { launch { process(it) } }
+        .joinAll()
+      log.info { "Ended billing process" }
+    }
   }
 
   private fun process(invoice: Invoice) {

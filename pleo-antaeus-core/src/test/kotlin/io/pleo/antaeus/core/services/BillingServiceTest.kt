@@ -6,7 +6,6 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.justRun
 import io.mockk.verify
-import io.mockk.verifyAll
 import io.pleo.antaeus.core.channel.outbound.NotificationPublisher
 import io.pleo.antaeus.core.exceptions.CurrencyMismatchException
 import io.pleo.antaeus.core.exceptions.CustomerNotFoundException
@@ -16,8 +15,6 @@ import io.pleo.antaeus.models.Currency
 import io.pleo.antaeus.models.Invoice
 import io.pleo.antaeus.models.InvoiceStatus
 import io.pleo.antaeus.models.Money
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -31,7 +28,6 @@ import java.math.BigDecimal
 @ExtendWith(MockKExtension::class)
 @MockKExtension.ConfirmVerification
 @MockKExtension.CheckUnnecessaryStub
-@OptIn(ExperimentalCoroutinesApi::class)
 class BillingServiceTest {
 
   @MockK
@@ -39,7 +35,7 @@ class BillingServiceTest {
 
   @MockK
   private lateinit var invoiceService: InvoiceService
-  
+
   @MockK
   private lateinit var notificationPublisher: NotificationPublisher
 
@@ -58,19 +54,19 @@ class BillingServiceTest {
   inner class PerformBilling {
 
     @Test
-    fun `should do nothing when no invoices in pending status`() = runTest {
+    fun `should do nothing when no invoices in pending status`() {
       // given
       every { invoiceService.fetchByStatus(InvoiceStatus.PENDING) } returns emptyList()
 
       // when
-      assertDoesNotThrow { underTest.performBilling() }
+      assertDoesNotThrow { underTest.processPending() }
 
       // then
       verify { invoiceService.fetchByStatus(InvoiceStatus.PENDING) }
     }
 
     @Test
-    fun `should set status to PAID and send notification when provider charges correctly`() = runTest {
+    fun `should set status to PAID and send notification when provider charges correctly`() {
       // given
       every { invoiceService.fetchByStatus(InvoiceStatus.PENDING) } returns listOf(dummyInvoice)
       every { paymentProvider.charge(dummyInvoice) } returns true
@@ -78,75 +74,67 @@ class BillingServiceTest {
       justRun { notificationPublisher.publish("some cool notification :)") }
 
       // when
-      assertDoesNotThrow { underTest.performBilling() }
+      assertDoesNotThrow { underTest.processPending() }
 
       // then
-      verifyAll {
-        invoiceService.fetchByStatus(InvoiceStatus.PENDING)
-        paymentProvider.charge(dummyInvoice)
-        invoiceService.updateStatus(1, InvoiceStatus.PAID)
-        notificationPublisher.publish("some cool notification :)")
-      }
+      verify(timeout = 1000) { invoiceService.fetchByStatus(InvoiceStatus.PENDING) }
+      verify(timeout = 1000) { paymentProvider.charge(dummyInvoice) }
+      verify(timeout = 1000) { invoiceService.updateStatus(1, InvoiceStatus.PAID) }
+      verify(timeout = 1000) { notificationPublisher.publish("some cool notification :)") }
     }
 
     @Test
-    fun `should set status to RETRY when provider does not charge`() = runTest {
+    fun `should set status to RETRY when provider does not charge`() {
       // given
       every { invoiceService.fetchByStatus(InvoiceStatus.PENDING) } returns listOf(dummyInvoice)
       every { paymentProvider.charge(dummyInvoice) } returns false
       every { invoiceService.updateStatus(1, InvoiceStatus.RETRY) } returns 1
 
       // when
-      assertDoesNotThrow { underTest.performBilling() }
+      assertDoesNotThrow { underTest.processPending() }
 
       // then
-      verifyAll {
-        invoiceService.fetchByStatus(InvoiceStatus.PENDING)
-        paymentProvider.charge(dummyInvoice)
-        invoiceService.updateStatus(1, InvoiceStatus.RETRY)
-      }
+      verify(timeout = 1000) { invoiceService.fetchByStatus(InvoiceStatus.PENDING) }
+      verify(timeout = 1000) { paymentProvider.charge(dummyInvoice) }
+      verify(timeout = 1000) { invoiceService.updateStatus(1, InvoiceStatus.RETRY) }
     }
 
     @ParameterizedTest
     @MethodSource("io.pleo.antaeus.core.services.BillingServiceTest#exceptions for FAILED")
     fun `should set status to FAILED when provider throws CurrencyMismatchException or CustomerNotFoundException`(
       exception: Exception
-    ) = runTest {
+    ) {
       // given
       every { invoiceService.fetchByStatus(InvoiceStatus.PENDING) } returns listOf(dummyInvoice)
       every { paymentProvider.charge(dummyInvoice) } throws exception
       every { invoiceService.updateStatus(1, InvoiceStatus.FAILED) } returns 1
 
       // when
-      assertDoesNotThrow { underTest.performBilling() }
+      assertDoesNotThrow { underTest.processPending() }
 
       // then
-      verifyAll {
-        invoiceService.fetchByStatus(InvoiceStatus.PENDING)
-        paymentProvider.charge(dummyInvoice)
-        invoiceService.updateStatus(1, InvoiceStatus.FAILED)
-      }
+      verify(timeout = 1000) { invoiceService.fetchByStatus(InvoiceStatus.PENDING) }
+      verify(timeout = 1000) { paymentProvider.charge(dummyInvoice) }
+      verify(timeout = 1000) { invoiceService.updateStatus(1, InvoiceStatus.FAILED) }
     }
 
     @ParameterizedTest
     @MethodSource("io.pleo.antaeus.core.services.BillingServiceTest#exceptions for RETRY")
     fun `should set status to RETRY when provider throws NetworkException or any other generic exception`(
       exception: Exception
-    ) = runTest {
+    ) {
       // given
       every { invoiceService.fetchByStatus(InvoiceStatus.PENDING) } returns listOf(dummyInvoice)
       every { paymentProvider.charge(dummyInvoice) } throws exception
       every { invoiceService.updateStatus(1, InvoiceStatus.RETRY) } returns 1
 
       // when
-      assertDoesNotThrow { underTest.performBilling() }
+      assertDoesNotThrow { underTest.processPending() }
 
       // then
-      verifyAll {
-        invoiceService.fetchByStatus(InvoiceStatus.PENDING)
-        paymentProvider.charge(dummyInvoice)
-        invoiceService.updateStatus(1, InvoiceStatus.RETRY)
-      }
+      verify(timeout = 1000) { invoiceService.fetchByStatus(InvoiceStatus.PENDING) }
+      verify(timeout = 1000) { paymentProvider.charge(dummyInvoice) }
+      verify(timeout = 1000) { invoiceService.updateStatus(1, InvoiceStatus.RETRY) }
     }
 
   }
