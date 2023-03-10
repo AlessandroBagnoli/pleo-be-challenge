@@ -1,0 +1,44 @@
+version: '3.8'
+services:
+
+  pubsub:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:417.0.0-emulators
+    container_name: pubsub
+    ports:
+      - "8085:8085"
+    command: >
+      bash -c "
+        gcloud beta emulators pubsub start --host-port 0.0.0.0:8085 &
+        sleep 5 &&
+        curl -X PUT http://localhost:8085/v1/projects/pleo/topics/billing_trigger &&
+        curl -X PUT -H 'Content-Type: application/json' -d '{\"topic\": \"projects/pleo/topics/billing_trigger\", \"enableExactlyOnceDelivery\": true}' http://localhost:8085/v1/projects/pleo/subscriptions/antaeus_svc-billing_trigger &&
+        tail -f /dev/null
+      "
+    healthcheck:
+      test: >
+        bash -c "
+          curl -sSf http://localhost:8085/v1/projects/pleo/topics/billing_trigger > /dev/null &&
+          curl -sSf http://localhost:8085/v1/projects/pleo/subscriptions/antaeus_svc-billing_trigger > /dev/null
+        "
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+  
+  app:
+    build: .
+    container_name: pleo-antaeus
+    image: pleo-antaeus
+    volumes:
+      - antaeus-build-cache:/root/.gradle
+    environment:
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+    ports:
+      - "8080:8080"
+    depends_on:
+      pubsub:
+        condition: service_healthy
+    profiles: [ "app" ]
+
+volumes:
+  antaeus-build-cache:
