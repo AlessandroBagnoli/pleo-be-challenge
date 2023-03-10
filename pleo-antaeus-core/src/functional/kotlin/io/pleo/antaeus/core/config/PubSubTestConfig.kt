@@ -5,6 +5,7 @@ import com.google.api.gax.grpc.GrpcTransportChannel
 import com.google.api.gax.rpc.FixedTransportChannelProvider
 import com.google.api.gax.rpc.TransportChannelProvider
 import com.google.cloud.pubsub.v1.*
+import com.google.pubsub.v1.ProjectSubscriptionName
 import com.google.pubsub.v1.PushConfig
 import com.google.pubsub.v1.SubscriptionName
 import com.google.pubsub.v1.TopicName
@@ -20,7 +21,7 @@ internal class PubSubTestConfig {
 
     private val BILLING_TRIGGER_TOPIC = TopicName.of(PROJECT_ID, "billing_trigger")
     private val NOTIFICATIONS_TOPIC = TopicName.of(PROJECT_ID, "notifications")
-    private val BILLING_TRIGGER_SUB = SubscriptionName.of(PROJECT_ID, "antaeus_svc-billing_trigger")
+    val BILLING_TRIGGER_SUB: SubscriptionName = SubscriptionName.of(PROJECT_ID, "antaeus_svc-billing_trigger")
     private val NOTIFICATIONS_SUB = SubscriptionName.of(PROJECT_ID, "antaeus_svc-notifications")
 
     private val pubsubList = mapOf(
@@ -65,6 +66,20 @@ internal class PubSubTestConfig {
       val channel = ManagedChannelBuilder.forTarget(emulatorEndpoint).usePlaintext().build()
       val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
       return Publisher.newBuilder(BILLING_TRIGGER_TOPIC)
+        .setChannelProvider(channelProvider)
+        .setCredentialsProvider(NoCredentialsProvider.create())
+        .build()
+    }
+
+    fun notificationSubscriber(emulatorEndpoint: String, receiver: MessageReceiver): Subscriber {
+      val channel = ManagedChannelBuilder.forTarget(emulatorEndpoint).usePlaintext().build()
+      val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
+      return Subscriber.newBuilder(
+        ProjectSubscriptionName.of(
+          NOTIFICATIONS_SUB.project,
+          NOTIFICATIONS_SUB.subscription
+        ), receiver
+      )
         .setChannelProvider(channelProvider)
         .setCredentialsProvider(NoCredentialsProvider.create())
         .build()

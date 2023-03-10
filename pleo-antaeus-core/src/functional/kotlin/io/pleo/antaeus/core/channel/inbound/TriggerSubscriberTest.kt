@@ -48,7 +48,7 @@ class TriggerSubscriberTest {
   }
 
   @Test
-  fun subscribe() {
+  fun `should receive trigger and call performBilling`() {
     // given
     val publisher = billingTriggerPublisher(emulatorEndpoint = pubsubEmulator.emulatorEndpoint)
     coJustRun { billingService.performBilling() }

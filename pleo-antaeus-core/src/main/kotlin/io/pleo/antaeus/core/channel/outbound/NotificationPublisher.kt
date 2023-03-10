@@ -1,14 +1,18 @@
 package io.pleo.antaeus.core.channel.outbound
 
+import com.google.api.core.ApiFutureCallback
+import com.google.api.core.ApiFutures
 import com.google.api.gax.core.NoCredentialsProvider
 import com.google.api.gax.grpc.GrpcTransportChannel
 import com.google.api.gax.rpc.FixedTransportChannelProvider
 import com.google.cloud.pubsub.v1.Publisher
+import com.google.common.util.concurrent.MoreExecutors
 import com.google.protobuf.ByteString
 import com.google.pubsub.v1.PubsubMessage
 import com.google.pubsub.v1.TopicName
 import io.grpc.ManagedChannelBuilder
 import mu.KotlinLogging
+
 
 class NotificationPublisher {
 
@@ -21,15 +25,22 @@ class NotificationPublisher {
 
     val messageIdFuture = publisher.publish(pubsubMessage)
 
-    // TODO handle the get?, it is synch
-    val messageId = messageIdFuture.get()
-    log.info { "Published message ID: $messageId" }
+    ApiFutures.addCallback(messageIdFuture, object : ApiFutureCallback<String> {
+      override fun onSuccess(messageId: String) {
+        log.info { "Published notification with message id: $messageId" }
+      }
+
+      override fun onFailure(t: Throwable) {
+        log.warn(t) { "Error during publish of notification" }
+      }
+    }, MoreExecutors.directExecutor())
   }
 
   private fun buildPublisher(): Publisher {
     val topicName = TopicName.of("pleo", "notifications")
 
-    val emulatorHost = System.getenv("PUBSUB_EMULATOR_HOST")
+    // TODO to fix
+    val emulatorHost = System.getProperty("PUBSUB_EMULATOR_HOST")
 
     val publisher = if (emulatorHost.isNullOrBlank()) {
       Publisher.newBuilder(topicName).build()

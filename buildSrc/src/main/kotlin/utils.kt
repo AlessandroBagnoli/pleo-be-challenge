@@ -6,6 +6,7 @@ private const val coroutinesVersion = "1.6.4"
 private const val googleCloudPubsub = "1.123.5"
 private const val junitVersion = "5.9.2"
 private const val testcontainersVersion = "1.17.6"
+private const val awaitilityVersion = "4.2.0"
 private const val slf4jSimpleVersion = "2.0.6"
 private const val kotlinLoggingVersion = "3.0.5"
 private const val mockkVersion = "1.13.4"
@@ -49,6 +50,9 @@ fun Project.kotlinProject() {
     "testImplementation"("org.testcontainers:testcontainers:$testcontainersVersion")
     "testImplementation"("org.testcontainers:junit-jupiter:$testcontainersVersion")
     "testImplementation"("org.testcontainers:gcloud:$testcontainersVersion")
+
+    // Awaitility
+    "testImplementation"("org.awaitility:awaitility-kotlin:4.2.0")
   }
 }
 
