@@ -62,6 +62,7 @@ internal class PubSubTestConfig {
       channel.shutdown()
     }
 
+    // TODO reuse utils
     fun billingTriggerPublisher(emulatorEndpoint: String): Publisher {
       val channel = ManagedChannelBuilder.forTarget(emulatorEndpoint).usePlaintext().build()
       val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
@@ -71,6 +72,7 @@ internal class PubSubTestConfig {
         .build()
     }
 
+    // TODO reuse utils
     fun notificationSubscriber(emulatorEndpoint: String, receiver: MessageReceiver): Subscriber {
       val channel = ManagedChannelBuilder.forTarget(emulatorEndpoint).usePlaintext().build()
       val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
