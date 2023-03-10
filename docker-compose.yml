@@ -24,8 +24,13 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+      
+  scheduler:
+    build: ./pleo-antaeus-scheduler
+    container_name: scheduler
+    image: scheduler
   
-  app:
+  pleo-antaeus:
     build: .
     container_name: pleo-antaeus
     image: pleo-antaeus
@@ -38,6 +43,8 @@ services:
     depends_on:
       pubsub:
         condition: service_healthy
+      scheduler:
+        condition: service_started
     profiles: [ "app" ]
 
 volumes:
