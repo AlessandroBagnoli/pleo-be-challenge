@@ -20,7 +20,7 @@ internal class PubSubTestConfig {
     const val PROJECT_ID = "pleo"
 
     private val BILLING_TRIGGER_TOPIC = TopicName.of(PROJECT_ID, "billing_trigger")
-    private val NOTIFICATIONS_TOPIC = TopicName.of(PROJECT_ID, "notifications")
+    val NOTIFICATIONS_TOPIC: TopicName = TopicName.of(PROJECT_ID, "notifications")
     val BILLING_TRIGGER_SUB: SubscriptionName = SubscriptionName.of(PROJECT_ID, "antaeus_svc-billing_trigger")
     private val NOTIFICATIONS_SUB = SubscriptionName.of(PROJECT_ID, "antaeus_svc-notifications")
 

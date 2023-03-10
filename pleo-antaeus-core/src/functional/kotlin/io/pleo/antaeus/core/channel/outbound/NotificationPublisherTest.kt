@@ -2,6 +2,7 @@ package io.pleo.antaeus.core.channel.outbound
 
 import com.google.cloud.pubsub.v1.MessageReceiver
 import com.google.pubsub.v1.PubsubMessage
+import io.pleo.antaeus.core.buildPublisher
 import io.pleo.antaeus.core.config.PubSubTestConfig
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.untilAsserted
@@ -16,9 +17,9 @@ import org.testcontainers.utility.DockerImageName
 @Testcontainers
 class NotificationPublisherTest {
 
-  private val underTest = NotificationPublisher()
-
   companion object {
+
+    private lateinit var underTest: NotificationPublisher
 
     @JvmStatic
     @Container
@@ -31,7 +32,13 @@ class NotificationPublisherTest {
     @BeforeAll
     internal fun beforeAll() {
       PubSubTestConfig.setupPubSubEmulator(pubsubEmulator)
-      System.setProperty("PUBSUB_EMULATOR_HOST", pubsubEmulator.emulatorEndpoint)
+      underTest = NotificationPublisher(
+        buildPublisher(
+          project = PubSubTestConfig.PROJECT_ID,
+          topic = PubSubTestConfig.NOTIFICATIONS_TOPIC.topic,
+          pubsubEmulator.emulatorEndpoint
+        )
+      )
     }
 
   }

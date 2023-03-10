@@ -37,10 +37,10 @@ class TriggerSubscriberTest {
     @BeforeAll
     internal fun beforeAll() {
       PubSubTestConfig.setupPubSubEmulator(pubsubEmulator)
-      System.setProperty("PUBSUB_EMULATOR_HOST", pubsubEmulator.emulatorEndpoint)
       underTest.subscribe(
         projectId = PubSubTestConfig.PROJECT_ID,
-        subscriptionId = PubSubTestConfig.BILLING_TRIGGER_SUB.subscription
+        subscriptionId = PubSubTestConfig.BILLING_TRIGGER_SUB.subscription,
+        host = pubsubEmulator.emulatorEndpoint
       )
     }
 
