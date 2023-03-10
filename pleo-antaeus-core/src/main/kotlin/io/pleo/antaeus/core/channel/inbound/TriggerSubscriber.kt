@@ -28,7 +28,8 @@ class TriggerSubscriber(
   fun subscribe(projectId: String = "pleo", subscriptionId: String = "antaeus_svc-billing_trigger") {
     val subscriptionName = ProjectSubscriptionName.of(projectId, subscriptionId)
 
-    val emulatorHost = System.getenv("PUBSUB_EMULATOR_HOST")
+    // TODO this is not OK, just a workaround for testing validation, but should come from env variable
+    val emulatorHost = System.getProperty("PUBSUB_EMULATOR_HOST")
 
     val subscriber = if (emulatorHost.isNullOrBlank()) {
       Subscriber.newBuilder(subscriptionName, triggerHandler).build()
