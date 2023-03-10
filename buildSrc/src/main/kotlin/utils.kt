@@ -3,6 +3,7 @@ import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.kotlin
 
 private const val coroutinesVersion = "1.6.4"
+private const val googleCloudPubsub = "1.123.5"
 private const val junitVersion = "5.9.2"
 private const val slf4jSimpleVersion = "2.0.6"
 private const val kotlinLoggingVersion = "3.0.5"
@@ -24,6 +25,9 @@ fun Project.kotlinProject() {
 
     // Coroutines
     "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+
+    //PubSub
+    "implementation"("com.google.cloud:google-cloud-pubsub:$googleCloudPubsub")
 
     // Logging
     "implementation"("org.slf4j:slf4j-simple:$slf4jSimpleVersion")
