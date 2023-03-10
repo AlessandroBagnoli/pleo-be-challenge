@@ -13,7 +13,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 
-
 class TriggerSubscriber(
   private val billingService: BillingService,
 ) {

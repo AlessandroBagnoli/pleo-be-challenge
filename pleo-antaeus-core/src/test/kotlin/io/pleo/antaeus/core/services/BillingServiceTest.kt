@@ -4,8 +4,10 @@ import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.justRun
 import io.mockk.verify
 import io.mockk.verifyAll
+import io.pleo.antaeus.core.channel.outbound.NotificationPublisher
 import io.pleo.antaeus.core.exceptions.CurrencyMismatchException
 import io.pleo.antaeus.core.exceptions.CustomerNotFoundException
 import io.pleo.antaeus.core.exceptions.NetworkException
@@ -37,6 +39,9 @@ class BillingServiceTest {
 
   @MockK
   private lateinit var invoiceService: InvoiceService
+  
+  @MockK
+  private lateinit var notificationPublisher: NotificationPublisher
 
   @InjectMockKs
   private lateinit var underTest: BillingService
@@ -65,11 +70,12 @@ class BillingServiceTest {
     }
 
     @Test
-    fun `should set status to PAID when provider charges correctly`() = runTest {
+    fun `should set status to PAID and send notification when provider charges correctly`() = runTest {
       // given
       every { invoiceService.fetchByStatus(InvoiceStatus.PENDING) } returns listOf(dummyInvoice)
       every { paymentProvider.charge(dummyInvoice) } returns true
       every { invoiceService.updateStatus(1, InvoiceStatus.PAID) } returns 1
+      justRun { notificationPublisher.publish("some cool notification :)") }
 
       // when
       assertDoesNotThrow { underTest.performBilling() }
@@ -79,6 +85,7 @@ class BillingServiceTest {
         invoiceService.fetchByStatus(InvoiceStatus.PENDING)
         paymentProvider.charge(dummyInvoice)
         invoiceService.updateStatus(1, InvoiceStatus.PAID)
+        notificationPublisher.publish("some cool notification :)")
       }
     }
 

@@ -12,19 +12,20 @@ services:
         sleep 5 &&
         curl -X PUT http://localhost:8085/v1/projects/pleo/topics/billing_trigger &&
         curl -X PUT -H 'Content-Type: application/json' -d '{\"topic\": \"projects/pleo/topics/billing_trigger\", \"enableExactlyOnceDelivery\": true}' http://localhost:8085/v1/projects/pleo/subscriptions/antaeus_svc-billing_trigger &&
+        curl -X PUT http://localhost:8085/v1/projects/pleo/topics/notifications &&
         tail -f /dev/null
       "
     healthcheck:
       test: >
         bash -c "
-          curl -sSf http://localhost:8085/v1/projects/pleo/topics/billing_trigger > /dev/null &&
-          curl -sSf http://localhost:8085/v1/projects/pleo/subscriptions/antaeus_svc-billing_trigger > /dev/null
+          curl -sSf http://localhost:8085/v1/projects/pleo/subscriptions/antaeus_svc-billing_trigger > /dev/null &&
+          curl -sSf http://localhost:8085/v1/projects/pleo/topics/notifications > /dev/null
         "
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
-      
+  
   scheduler:
     build: ./pleo-antaeus-scheduler
     container_name: scheduler
