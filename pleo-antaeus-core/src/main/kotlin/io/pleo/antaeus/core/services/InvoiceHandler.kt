@@ -21,12 +21,14 @@ class InvoiceHandler(
     try {
       val charged = paymentProvider.charge(invoice)
       if (charged) {
+        // TODO to decide if we want this inside the try clause
         invoiceService.updateStatus(invoice.id, InvoiceStatus.PAID)
         log.info { "Customer account ${invoice.customerId} charged the given amount for invoice ${invoice.id}" }
         notificationPublisher.publish("some cool notification :)")
         return
       }
 
+      // TODO to decide if we want this inside the try clause
       invoiceService.updateStatus(invoice.id, InvoiceStatus.RETRY)
       log.info { "Customer account ${invoice.customerId} balance did not allow the charge for invoice ${invoice.id}" }
     } catch (ex: Exception) {
