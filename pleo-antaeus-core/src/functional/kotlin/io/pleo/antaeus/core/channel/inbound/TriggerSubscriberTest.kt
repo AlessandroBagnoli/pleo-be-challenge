@@ -67,9 +67,9 @@ class TriggerSubscriberTest {
     // given
     val publisher = billingTriggerPublisher(emulatorEndpoint = pubsubEmulator.emulatorEndpoint)
     justRun { billingService.processRetry() }
+    val pubsubMessage = PubsubMessage.newBuilder().setData(ByteString.copyFromUtf8(InvoiceStatus.RETRY.name)).build()
 
     // when
-    val pubsubMessage = PubsubMessage.newBuilder().setData(ByteString.copyFromUtf8(InvoiceStatus.RETRY.name)).build()
     val publish = publisher.publish(pubsubMessage)
     val actual = publish.get()
 

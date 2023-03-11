@@ -25,7 +25,7 @@ internal class PubSubTestConfig {
     private val INVOICES_TOPIC: TopicName = TopicName.of(PROJECT_ID, "invoices")
     val BILLING_TRIGGER_SUB: SubscriptionName = SubscriptionName.of(PROJECT_ID, "antaeus_svc-billing_trigger")
     private val NOTIFICATIONS_SUB = SubscriptionName.of(PROJECT_ID, "antaeus_svc-notifications")
-    private val INVOICES_SUB = SubscriptionName.of(PROJECT_ID, "antaeus_svc-invoices")
+    val INVOICES_SUB = SubscriptionName.of(PROJECT_ID, "antaeus_svc-invoices")
 
     private val pubsubList = mapOf(
       BILLING_TRIGGER_TOPIC to BILLING_TRIGGER_SUB,
