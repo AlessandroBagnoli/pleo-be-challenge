@@ -8,10 +8,13 @@
 package io.pleo.antaeus.app
 
 import getPaymentProvider
+import io.pleo.antaeus.core.channel.inbound.InvoiceSubscriber
 import io.pleo.antaeus.core.channel.inbound.TriggerSubscriber
+import io.pleo.antaeus.core.channel.outbound.InvoicePublisher
 import io.pleo.antaeus.core.channel.outbound.NotificationPublisher
 import io.pleo.antaeus.core.services.BillingService
 import io.pleo.antaeus.core.services.CustomerService
+import io.pleo.antaeus.core.services.InvoiceHandler
 import io.pleo.antaeus.core.services.InvoiceService
 import io.pleo.antaeus.data.AntaeusDal
 import io.pleo.antaeus.data.CustomerTable
@@ -63,15 +66,20 @@ fun main() {
   // Create core services
   val invoiceService = InvoiceService(dal = dal)
   val customerService = CustomerService(dal = dal)
-
   val notificationPublisher = NotificationPublisher()
-
-  // This is _your_ billing service to be included where you see fit
-  val billingService = BillingService(
+  val invoicePublisher = InvoicePublisher()
+  val invoiceHandler = InvoiceHandler(
     paymentProvider = paymentProvider,
     invoiceService = invoiceService,
     notificationPublisher = notificationPublisher
   )
+
+  // Create subscriber which receives invoices one by one
+  val invoiceSubscriber = InvoiceSubscriber(invoiceHandler = invoiceHandler)
+  invoiceSubscriber.subscribe()
+
+  // This is _your_ billing service to be included where you see fit
+  val billingService = BillingService(invoiceService = invoiceService, invoicePublisher = invoicePublisher)
 
   // Create subscriber for trigger event and start listening
   val triggerSubscriber = TriggerSubscriber(billingService = billingService)
