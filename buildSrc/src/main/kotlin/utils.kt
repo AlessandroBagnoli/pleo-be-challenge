@@ -4,6 +4,7 @@ import org.gradle.kotlin.dsl.kotlin
 
 private const val coroutinesVersion = "1.6.4"
 private const val googleCloudPubsub = "1.123.5"
+private const val gsonVersion = "2.10.1"
 private const val junitVersion = "5.9.2"
 private const val testcontainersVersion = "1.17.6"
 private const val awaitilityVersion = "4.2.0"
@@ -15,7 +16,6 @@ private const val exposeVersion = "0.17.14"
 private const val sqliteJdbcVersion = "3.41.0.0"
 
 private const val javalinVersion = "5.4.2"
-private const val jacksonDatabindVersion = "2.14.2"
 
 /**
  * Configures the current project as a Kotlin project by adding the Kotlin `stdlib` as a dependency.
@@ -30,6 +30,9 @@ fun Project.kotlinProject() {
 
     //PubSub
     "implementation"("com.google.cloud:google-cloud-pubsub:$googleCloudPubsub")
+    
+    // GSON for Json de/serialization
+    "implementation"("com.google.code.gson:gson:$gsonVersion")
 
     // Logging
     "implementation"("org.slf4j:slf4j-simple:$slf4jSimpleVersion")
@@ -69,6 +72,5 @@ fun Project.dataLibs() {
 fun Project.webLibs() {
   dependencies {
     "implementation"("io.javalin:javalin:$javalinVersion")
-    "implementation"("com.fasterxml.jackson.core:jackson-databind:$jacksonDatabindVersion")
   }
 }
