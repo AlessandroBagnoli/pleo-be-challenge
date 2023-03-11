@@ -13,6 +13,8 @@ services:
         curl -X PUT http://localhost:8085/v1/projects/pleo/topics/billing_trigger &&
         curl -X PUT -H 'Content-Type: application/json' -d '{\"topic\": \"projects/pleo/topics/billing_trigger\", \"enableExactlyOnceDelivery\": true}' http://localhost:8085/v1/projects/pleo/subscriptions/antaeus_svc-billing_trigger &&
         curl -X PUT http://localhost:8085/v1/projects/pleo/topics/notifications &&
+        curl -X PUT http://localhost:8085/v1/projects/pleo/topics/invoices &&
+        curl -X PUT -H 'Content-Type: application/json' -d '{\"topic\": \"projects/pleo/topics/invoices\", \"enableExactlyOnceDelivery\": true}' http://localhost:8085/v1/projects/pleo/subscriptions/antaeus_svc-invoices &&
         tail -f /dev/null
       "
 
@@ -31,9 +33,6 @@ services:
       PUBSUB_EMULATOR_HOST: pubsub:8085
     ports:
       - "8080:8080"
-    depends_on:
-      - pubsub
-      - scheduler
 
 volumes:
   antaeus-build-cache:
