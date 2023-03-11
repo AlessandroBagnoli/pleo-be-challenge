@@ -74,16 +74,16 @@ fun main() {
     notificationPublisher = notificationPublisher
   )
 
-  // Create subscriber which receives invoices one by one
-  val invoiceSubscriber = InvoiceSubscriber(invoiceHandler = invoiceHandler)
-  invoiceSubscriber.subscribe()
-
   // This is _your_ billing service to be included where you see fit
   val billingService = BillingService(invoiceService = invoiceService, invoicePublisher = invoicePublisher)
 
   // Create subscriber for trigger event and start listening
   val triggerSubscriber = TriggerSubscriber(billingService = billingService)
   triggerSubscriber.subscribe()
+
+  // Create subscriber which receives invoices one by one and starts listening
+  val invoiceSubscriber = InvoiceSubscriber(invoiceHandler = invoiceHandler)
+  invoiceSubscriber.subscribe()
 
   // Create REST web service
   AntaeusRest(
