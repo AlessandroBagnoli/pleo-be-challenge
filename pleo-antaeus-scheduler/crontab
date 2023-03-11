@@ -1,1 +1,2 @@
 0 0 1 * * /scripts/triggerPending.sh
+*/5 * * * * /scripts/triggerRetry.sh
