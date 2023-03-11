@@ -5,11 +5,12 @@ import com.google.api.gax.grpc.GrpcTransportChannel
 import com.google.api.gax.rpc.FixedTransportChannelProvider
 import com.google.api.gax.rpc.TransportChannelProvider
 import com.google.cloud.pubsub.v1.*
-import com.google.pubsub.v1.ProjectSubscriptionName
 import com.google.pubsub.v1.PushConfig
 import com.google.pubsub.v1.SubscriptionName
 import com.google.pubsub.v1.TopicName
 import io.grpc.ManagedChannelBuilder
+import io.pleo.antaeus.core.buildPublisher
+import io.pleo.antaeus.core.buildSubscriber
 import org.testcontainers.containers.PubSubEmulatorContainer
 
 internal class PubSubTestConfig {
@@ -20,13 +21,16 @@ internal class PubSubTestConfig {
     const val PROJECT_ID = "pleo"
 
     private val BILLING_TRIGGER_TOPIC = TopicName.of(PROJECT_ID, "billing_trigger")
-    val NOTIFICATIONS_TOPIC: TopicName = TopicName.of(PROJECT_ID, "notifications")
+    private val NOTIFICATIONS_TOPIC: TopicName = TopicName.of(PROJECT_ID, "notifications")
+    private val INVOICES_TOPIC: TopicName = TopicName.of(PROJECT_ID, "invoices")
     val BILLING_TRIGGER_SUB: SubscriptionName = SubscriptionName.of(PROJECT_ID, "antaeus_svc-billing_trigger")
     private val NOTIFICATIONS_SUB = SubscriptionName.of(PROJECT_ID, "antaeus_svc-notifications")
+    private val INVOICES_SUB = SubscriptionName.of(PROJECT_ID, "antaeus_svc-invoices")
 
     private val pubsubList = mapOf(
       BILLING_TRIGGER_TOPIC to BILLING_TRIGGER_SUB,
-      NOTIFICATIONS_TOPIC to NOTIFICATIONS_SUB
+      NOTIFICATIONS_TOPIC to NOTIFICATIONS_SUB,
+      INVOICES_TOPIC to INVOICES_SUB
     )
 
     fun setupPubSubEmulator(pubsubEmulator: PubSubEmulatorContainer) {
@@ -62,30 +66,36 @@ internal class PubSubTestConfig {
       channel.shutdown()
     }
 
-    // TODO reuse utils
-    fun billingTriggerPublisher(emulatorEndpoint: String): Publisher {
-      val channel = ManagedChannelBuilder.forTarget(emulatorEndpoint).usePlaintext().build()
-      val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
-      return Publisher.newBuilder(BILLING_TRIGGER_TOPIC)
-        .setChannelProvider(channelProvider)
-        .setCredentialsProvider(NoCredentialsProvider.create())
-        .build()
-    }
+    fun billingTriggerPublisher(emulatorEndpoint: String) =
+      buildPublisher(project = PROJECT_ID, topic = BILLING_TRIGGER_TOPIC.topic, host = emulatorEndpoint)
 
-    // TODO reuse utils
-    fun notificationSubscriber(emulatorEndpoint: String, receiver: MessageReceiver): Subscriber {
-      val channel = ManagedChannelBuilder.forTarget(emulatorEndpoint).usePlaintext().build()
-      val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
-      return Subscriber.newBuilder(
-        ProjectSubscriptionName.of(
-          NOTIFICATIONS_SUB.project,
-          NOTIFICATIONS_SUB.subscription
-        ), receiver
+    fun notificationPublisher(emulatorEndpoint: String) = buildPublisher(
+      project = PROJECT_ID,
+      topic = NOTIFICATIONS_TOPIC.topic,
+      host = emulatorEndpoint
+    )
+
+    fun invoicePublisher(emulatorEndpoint: String) = buildPublisher(
+      project = PROJECT_ID,
+      topic = INVOICES_TOPIC.topic,
+      host = emulatorEndpoint
+    )
+
+    fun notificationSubscriber(emulatorEndpoint: String, receiver: MessageReceiver) =
+      buildSubscriber(
+        project = PROJECT_ID,
+        subscription = NOTIFICATIONS_SUB.subscription,
+        host = emulatorEndpoint,
+        handler = receiver
       )
-        .setChannelProvider(channelProvider)
-        .setCredentialsProvider(NoCredentialsProvider.create())
-        .build()
-    }
+
+    fun invoiceSubscriber(emulatorEndpoint: String, receiver: MessageReceiver) =
+      buildSubscriber(
+        project = PROJECT_ID,
+        subscription = INVOICES_SUB.subscription,
+        host = emulatorEndpoint,
+        handler = receiver
+      )
 
   }
 }

@@ -1,10 +1,15 @@
 package io.pleo.antaeus.core.channel.outbound
 
 import com.google.cloud.pubsub.v1.MessageReceiver
+import com.google.gson.Gson
 import com.google.pubsub.v1.PubsubMessage
 import io.pleo.antaeus.core.config.PubSubTestConfig
-import io.pleo.antaeus.core.config.PubSubTestConfig.Companion.notificationPublisher
-import io.pleo.antaeus.core.config.PubSubTestConfig.Companion.notificationSubscriber
+import io.pleo.antaeus.core.config.PubSubTestConfig.Companion.invoicePublisher
+import io.pleo.antaeus.core.config.PubSubTestConfig.Companion.invoiceSubscriber
+import io.pleo.antaeus.models.Currency
+import io.pleo.antaeus.models.Invoice
+import io.pleo.antaeus.models.InvoiceStatus
+import io.pleo.antaeus.models.Money
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -14,13 +19,14 @@ import org.testcontainers.containers.PubSubEmulatorContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
+import java.math.BigDecimal
 
 @Testcontainers
-class NotificationPublisherTest {
+class InvoicePublisherTest {
 
   companion object {
 
-    private lateinit var underTest: NotificationPublisher
+    private lateinit var underTest: InvoicePublisher
 
     @JvmStatic
     @Container
@@ -33,7 +39,7 @@ class NotificationPublisherTest {
     @BeforeAll
     internal fun beforeAll() {
       PubSubTestConfig.setupPubSubEmulator(pubsubEmulator)
-      underTest = NotificationPublisher(notificationPublisher(emulatorEndpoint = pubsubEmulator.emulatorEndpoint))
+      underTest = InvoicePublisher(invoicePublisher(emulatorEndpoint = pubsubEmulator.emulatorEndpoint))
     }
 
   }
@@ -46,14 +52,26 @@ class NotificationPublisherTest {
       receivedMessage = message
       consumer.ack()
     }
-    notificationSubscriber(emulatorEndpoint = pubsubEmulator.emulatorEndpoint, receiver)
+    invoiceSubscriber(emulatorEndpoint = pubsubEmulator.emulatorEndpoint, receiver = receiver)
       .startAsync()
       .awaitRunning()
+    val input = Invoice(
+      id = 5,
+      customerId = 10,
+      amount = Money(value = BigDecimal.ONE, currency = Currency.EUR),
+      status = InvoiceStatus.PENDING
+    )
 
     // when
-    underTest.publish("a cool notification")
+    underTest.publish(input)
 
     // then
-    await untilAsserted { assertEquals("a cool notification", receivedMessage.data.toStringUtf8()) }
+    await untilAsserted {
+      assertEquals(
+        input,
+        Gson().fromJson(receivedMessage.data.toStringUtf8(), Invoice::class.java)
+      )
+    }
   }
+
 }
