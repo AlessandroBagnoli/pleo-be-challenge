@@ -1,6 +1,23 @@
 version: '3.8'
 services:
 
+  postgres:
+    image: postgres:15.2
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: pleo
+      POSTGRES_PASSWORD: randompassword
+      POSTGRES_DB: antaeus
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "pleo", "-d", "antaeus" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   pubsub:
     image: gcr.io/google.com/cloudsdktool/google-cloud-cli:417.0.0-emulators
     container_name: pubsub
@@ -20,19 +37,23 @@ services:
 
   scheduler:
     build: ./pleo-antaeus-scheduler
-    container_name: scheduler
     image: scheduler
+    container_name: scheduler
   
   pleo-antaeus:
     build: .
-    container_name: pleo-antaeus
     image: pleo-antaeus
+    container_name: pleo-antaeus
+    ports:
+      - "8080:8080"
     volumes:
       - antaeus-build-cache:/root/.gradle
     environment:
       PUBSUB_EMULATOR_HOST: pubsub:8085
-    ports:
-      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   antaeus-build-cache:
+  postgres-data:

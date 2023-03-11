@@ -11,11 +11,15 @@ import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
-import java.io.File
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.utility.DockerImageName
 import java.math.BigDecimal
 import java.sql.Connection
 import kotlin.random.Random
 
+@Testcontainers
 class AntaeusDalTest {
 
   companion object {
@@ -25,16 +29,22 @@ class AntaeusDalTest {
     private val tables = arrayOf(InvoiceTable, CustomerTable)
 
     @JvmStatic
+    @Container
+    private val postgresEmulator = PostgreSQLContainer(DockerImageName.parse("postgres:15.2"))
+      .withDatabaseName("antaeus")
+      .withUsername("pleo")
+      .withPassword("randompassword")
+
+    @JvmStatic
     @BeforeAll
     fun beforeAll() {
-      val dbFile: File = File.createTempFile("antaeus-db", ".sqlite")
       // Connect to the database and create the needed tables. Drop any existing data.
       db = Database
         .connect(
-          url = "jdbc:sqlite:${dbFile.absolutePath}",
-          driver = "org.sqlite.JDBC",
-          user = "root",
-          password = ""
+          url = postgresEmulator.jdbcUrl,
+          driver = "org.postgresql.Driver",
+          user = postgresEmulator.username,
+          password = postgresEmulator.password
         )
         .also {
           TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE

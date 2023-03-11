@@ -27,21 +27,19 @@ import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import setupInitialData
-import java.io.File
 import java.sql.Connection
 
 fun main() {
   // The tables to create in the database.
   val tables = arrayOf(InvoiceTable, CustomerTable)
 
-  val dbFile: File = File.createTempFile("antaeus-db", ".sqlite")
   // Connect to the database and create the needed tables. Drop any existing data.
   val db = Database
     .connect(
-      url = "jdbc:sqlite:${dbFile.absolutePath}",
-      driver = "org.sqlite.JDBC",
-      user = "root",
-      password = ""
+      url = "jdbc:postgresql://localhost:5432/antaeus",
+      driver = "org.postgresql.Driver",
+      user = "pleo",
+      password = "randompassword"
     )
     .also {
       TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE

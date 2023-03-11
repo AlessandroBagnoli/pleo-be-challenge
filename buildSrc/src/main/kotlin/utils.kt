@@ -3,7 +3,7 @@ import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.kotlin
 
 private const val coroutinesVersion = "1.6.4"
-private const val googleCloudPubsub = "1.123.5"
+private const val googleCloudPubsubVersion = "1.123.5"
 private const val gsonVersion = "2.10.1"
 private const val junitVersion = "5.9.2"
 private const val testcontainersVersion = "1.17.6"
@@ -12,8 +12,8 @@ private const val slf4jSimpleVersion = "2.0.6"
 private const val kotlinLoggingVersion = "3.0.5"
 private const val mockkVersion = "1.13.4"
 
-private const val exposeVersion = "0.17.14"
-private const val sqliteJdbcVersion = "3.41.0.0"
+private const val exposedVersion = "0.17.14"
+private const val postgresqlVersion = "42.5.4"
 
 private const val javalinVersion = "5.4.2"
 
@@ -28,9 +28,9 @@ fun Project.kotlinProject() {
     // Coroutines
     "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 
-    //PubSub
-    "implementation"("com.google.cloud:google-cloud-pubsub:$googleCloudPubsub")
-    
+    // PubSub client library
+    "implementation"("com.google.cloud:google-cloud-pubsub:$googleCloudPubsubVersion")
+
     // GSON for Json de/serialization
     "implementation"("com.google.code.gson:gson:$gsonVersion")
 
@@ -61,8 +61,9 @@ fun Project.kotlinProject() {
  */
 fun Project.dataLibs() {
   dependencies {
-    "implementation"("org.jetbrains.exposed:exposed:$exposeVersion")
-    "implementation"("org.xerial:sqlite-jdbc:$sqliteJdbcVersion")
+    "implementation"("org.jetbrains.exposed:exposed:$exposedVersion")
+    "implementation"("org.postgresql:postgresql:$postgresqlVersion")
+    "testImplementation"("org.testcontainers:postgresql:$testcontainersVersion")
   }
 }
 
