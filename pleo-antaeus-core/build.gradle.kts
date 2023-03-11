@@ -13,3 +13,5 @@ dependencies {
 testSets {
   "functional"()
 }
+
+tasks.getByName("check").dependsOn(tasks.named("functional"))
