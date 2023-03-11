@@ -9,7 +9,6 @@ package io.pleo.antaeus.data
 
 import io.pleo.antaeus.models.*
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class AntaeusDal(private val db: Database) {

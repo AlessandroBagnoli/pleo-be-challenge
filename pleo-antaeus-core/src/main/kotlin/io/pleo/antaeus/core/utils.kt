@@ -37,7 +37,7 @@ fun buildSubscriber(
 ): Subscriber {
   val subscriptionName = ProjectSubscriptionName.of(project, subscription)
   log.info { "Using pubsub located at $host" }
-  
+
   val channel = ManagedChannelBuilder.forTarget(host).usePlaintext().build()
   val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
   return Subscriber.newBuilder(subscriptionName, handler)
