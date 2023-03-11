@@ -15,11 +15,11 @@ class TriggerSubscriber(
 
   private val messageHandler = MessageReceiver { message, consumer ->
     try {
-      log.info { "Received message with id ${message.messageId}, data: ${message.data.toStringUtf8()}" }
+      log.debug { "Received message with id ${message.messageId}, data: ${message.data.toStringUtf8()}" }
       when (val invoiceStatus = Gson().fromJson(message.data.toStringUtf8(), InvoiceStatus::class.java)) {
         InvoiceStatus.PENDING -> billingService.processPending()
         InvoiceStatus.RETRY -> billingService.processRetry()
-        else -> log.info { "Unable to process invoices in status: $invoiceStatus" }
+        else -> log.warn { "Unable to process invoices in status: $invoiceStatus" }
       }
     } catch (ex: Exception) {
       log.warn(ex) { "Exception in message receiver for message with id ${message.messageId}, data: ${message.data.toStringUtf8()}" }
@@ -36,7 +36,7 @@ class TriggerSubscriber(
     val subscriber =
       buildSubscriber(project = projectId, subscription = subscriptionId, host = host, handler = messageHandler)
     subscriber.startAsync().awaitRunning()
-    log.info { "Listening for messages on ${subscriber.subscriptionNameString}" }
+    log.debug { "Listening for messages on ${subscriber.subscriptionNameString}" }
   }
 
 }

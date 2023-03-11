@@ -25,7 +25,7 @@ class InvoicePublisher(
 
     ApiFutures.addCallback(messageIdFuture, object : ApiFutureCallback<String> {
       override fun onSuccess(messageId: String) {
-        log.info { "Published invoice ${invoice.id} with message id: $messageId" }
+        log.debug { "Published invoice ${invoice.id} with message id: $messageId" }
       }
 
       override fun onFailure(t: Throwable) {

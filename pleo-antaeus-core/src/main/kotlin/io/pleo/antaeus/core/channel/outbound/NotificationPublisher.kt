@@ -25,7 +25,7 @@ class NotificationPublisher(
 
     ApiFutures.addCallback(messageIdFuture, object : ApiFutureCallback<String> {
       override fun onSuccess(messageId: String) {
-        log.info { "Published notification with message id: $messageId" }
+        log.debug { "Published notification with message id: $messageId" }
       }
 
       override fun onFailure(t: Throwable) {

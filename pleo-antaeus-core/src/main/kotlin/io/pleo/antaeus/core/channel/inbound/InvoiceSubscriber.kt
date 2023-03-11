@@ -15,7 +15,7 @@ class InvoiceSubscriber(
 
   private val messageHandler = MessageReceiver { message, consumer ->
     try {
-      log.info { "Received message with id ${message.messageId}, data: ${message.data.toStringUtf8()}" }
+      log.debug { "Received message with id ${message.messageId}, data: ${message.data.toStringUtf8()}" }
       invoiceHandler.process(Gson().fromJson(message.data.toStringUtf8(), Invoice::class.java))
       consumer.ack()
     } catch (ex: Exception) {
@@ -32,7 +32,7 @@ class InvoiceSubscriber(
     val subscriber =
       buildSubscriber(project = projectId, subscription = subscriptionId, host = host, handler = messageHandler)
     subscriber.startAsync().awaitRunning()
-    log.info { "Listening for messages on ${subscriber.subscriptionNameString}" }
+    log.debug { "Listening for messages on ${subscriber.subscriptionNameString}" }
   }
 
 }
