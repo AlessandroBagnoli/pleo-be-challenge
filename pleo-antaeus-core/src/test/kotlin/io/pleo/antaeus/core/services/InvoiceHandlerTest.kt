@@ -11,10 +11,7 @@ import io.pleo.antaeus.core.exceptions.CurrencyMismatchException
 import io.pleo.antaeus.core.exceptions.CustomerNotFoundException
 import io.pleo.antaeus.core.exceptions.NetworkException
 import io.pleo.antaeus.core.external.PaymentProvider
-import io.pleo.antaeus.models.Currency
-import io.pleo.antaeus.models.Invoice
-import io.pleo.antaeus.models.InvoiceStatus
-import io.pleo.antaeus.models.Money
+import io.pleo.antaeus.models.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -50,6 +47,9 @@ class InvoiceHandlerTest {
     status = InvoiceStatus.PENDING
   )
 
+  private val PAID_TEXT = "Your invoice has been paid!"
+  private val FAILED_TEXT = "An error has occurred during the payment of your invoice"
+
   @Nested
   @DisplayName("process")
   inner class Process {
@@ -59,7 +59,9 @@ class InvoiceHandlerTest {
       // given
       every { paymentProvider.charge(dummyInvoice) } returns true
       every { invoiceService.updateStatus(1, InvoiceStatus.PAID) } returns 1
-      justRun { notificationPublisher.publish("some cool notification :)") }
+      val notification =
+        Notification(invoiceId = dummyInvoice.id, customerId = dummyInvoice.customerId, text = PAID_TEXT)
+      justRun { notificationPublisher.publish(notification) }
 
       // when
       assertDoesNotThrow { underTest.process(dummyInvoice) }
@@ -68,7 +70,7 @@ class InvoiceHandlerTest {
       verifyAll {
         paymentProvider.charge(dummyInvoice)
         invoiceService.updateStatus(1, InvoiceStatus.PAID)
-        notificationPublisher.publish("some cool notification :)")
+        notificationPublisher.publish(notification)
       }
     }
 
@@ -90,12 +92,15 @@ class InvoiceHandlerTest {
 
     @ParameterizedTest
     @MethodSource("io.pleo.antaeus.core.services.InvoiceHandlerTest#exceptions for FAILED")
-    fun `should set status to FAILED when provider throws CurrencyMismatchException or CustomerNotFoundException`(
+    fun `should set status to FAILED and send notification when provider throws CurrencyMismatchException, CustomerNotFoundException, or some unhandled exception`(
       exception: Exception
     ) {
       // given
       every { paymentProvider.charge(dummyInvoice) } throws exception
       every { invoiceService.updateStatus(1, InvoiceStatus.FAILED) } returns 1
+      val notification =
+        Notification(invoiceId = dummyInvoice.id, customerId = dummyInvoice.customerId, text = FAILED_TEXT)
+      justRun { notificationPublisher.publish(notification) }
 
       // when
       assertDoesNotThrow { underTest.process(dummyInvoice) }
@@ -104,16 +109,14 @@ class InvoiceHandlerTest {
       verifyAll {
         paymentProvider.charge(dummyInvoice)
         invoiceService.updateStatus(1, InvoiceStatus.FAILED)
+        notificationPublisher.publish(notification)
       }
     }
 
-    @ParameterizedTest
-    @MethodSource("io.pleo.antaeus.core.services.InvoiceHandlerTest#exceptions for RETRY")
-    fun `should set status to RETRY when provider throws NetworkException or any other generic exception`(
-      exception: Exception
-    ) {
+    @Test
+    fun `should set status to RETRY when provider throws NetworkException or any other generic exception`() {
       // given
-      every { paymentProvider.charge(dummyInvoice) } throws exception
+      every { paymentProvider.charge(dummyInvoice) } throws NetworkException()
       every { invoiceService.updateStatus(1, InvoiceStatus.RETRY) } returns 1
 
       // when
@@ -125,22 +128,15 @@ class InvoiceHandlerTest {
         invoiceService.updateStatus(1, InvoiceStatus.RETRY)
       }
     }
-
   }
 
   companion object {
     @JvmStatic
     fun `exceptions for FAILED`() = listOf(
       Arguments.of(CurrencyMismatchException(invoiceId = 1, customerId = 1)),
-      Arguments.of(CustomerNotFoundException(id = 1))
-    )
-
-    @JvmStatic
-    fun `exceptions for RETRY`() = listOf(
-      Arguments.of(NetworkException()),
+      Arguments.of(CustomerNotFoundException(id = 1)),
       Arguments.of(RuntimeException("some random exception"))
     )
-
   }
 
 }

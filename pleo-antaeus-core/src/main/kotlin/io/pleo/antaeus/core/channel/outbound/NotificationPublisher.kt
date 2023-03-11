@@ -4,9 +4,11 @@ import com.google.api.core.ApiFutureCallback
 import com.google.api.core.ApiFutures
 import com.google.cloud.pubsub.v1.Publisher
 import com.google.common.util.concurrent.MoreExecutors
+import com.google.gson.Gson
 import com.google.protobuf.ByteString
 import com.google.pubsub.v1.PubsubMessage
 import io.pleo.antaeus.core.buildPublisher
+import io.pleo.antaeus.models.Notification
 import mu.KotlinLogging
 
 class NotificationPublisher(
@@ -15,8 +17,8 @@ class NotificationPublisher(
 
   private val log = KotlinLogging.logger {}
 
-  fun publish(notification: String) {
-    val data = ByteString.copyFromUtf8(notification)
+  fun publish(notification: Notification) {
+    val data = ByteString.copyFromUtf8(Gson().toJson(notification))
     val pubsubMessage = PubsubMessage.newBuilder().setData(data).build()
 
     val messageIdFuture = publisher.publish(pubsubMessage)

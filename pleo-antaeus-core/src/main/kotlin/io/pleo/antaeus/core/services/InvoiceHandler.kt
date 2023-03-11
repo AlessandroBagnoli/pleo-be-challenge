@@ -7,52 +7,56 @@ import io.pleo.antaeus.core.exceptions.NetworkException
 import io.pleo.antaeus.core.external.PaymentProvider
 import io.pleo.antaeus.models.Invoice
 import io.pleo.antaeus.models.InvoiceStatus
+import io.pleo.antaeus.models.Notification
 import mu.KotlinLogging
 
 class InvoiceHandler(
   private val paymentProvider: PaymentProvider,
   private val invoiceService: InvoiceService,
-  private val notificationPublisher: NotificationPublisher
+  private val notifier: NotificationPublisher
 ) {
 
-  private val log = KotlinLogging.logger {}
+  companion object {
+    private val log = KotlinLogging.logger {}
+    private const val PAID_TEXT = "Your invoice has been paid!"
+    private const val FAILED_TEXT = "An error has occurred during the payment of your invoice"
+  }
 
   fun process(invoice: Invoice) {
+    var result = invoice.status
     try {
       val charged = paymentProvider.charge(invoice)
-      if (charged) {
-        // TODO to decide if we want this inside the try clause
-        invoiceService.updateStatus(invoice.id, InvoiceStatus.PAID)
+      result = if (charged) {
         log.info { "Customer account ${invoice.customerId} charged the given amount for invoice ${invoice.id}" }
-        notificationPublisher.publish("some cool notification :)")
-        return
+        notifier.publish(Notification(invoiceId = invoice.id, customerId = invoice.customerId, text = PAID_TEXT))
+        InvoiceStatus.PAID
+      } else {
+        log.info { "Customer account ${invoice.customerId} balance did not allow the charge for invoice ${invoice.id}" }
+        InvoiceStatus.RETRY
       }
-
-      // TODO to decide if we want this inside the try clause
-      invoiceService.updateStatus(invoice.id, InvoiceStatus.RETRY)
-      log.info { "Customer account ${invoice.customerId} balance did not allow the charge for invoice ${invoice.id}" }
     } catch (ex: Exception) {
-      when (ex) {
-        is CurrencyMismatchException -> {
-          invoiceService.updateStatus(invoice.id, InvoiceStatus.FAILED)
-          log.warn(ex) { "Currency and customer account mismatch during charge of invoice ${invoice.id} for customer ${invoice.customerId}" }
-        }
-
+      result = when (ex) {
+        is CurrencyMismatchException,
         is CustomerNotFoundException -> {
-          invoiceService.updateStatus(invoice.id, InvoiceStatus.FAILED)
-          log.warn(ex) { "Customer with id ${invoice.customerId} not found during charge of invoice ${invoice.id}" }
+          log.warn(ex) { "Unrecoverable exception during charge of invoice ${invoice.id} for customer ${invoice.customerId}" }
+          notifier.publish(Notification(invoiceId = invoice.id, customerId = invoice.customerId, text = FAILED_TEXT))
+          InvoiceStatus.FAILED
         }
 
         is NetworkException -> {
-          invoiceService.updateStatus(invoice.id, InvoiceStatus.RETRY)
           log.warn(ex) { "Network error happened during charge of invoice ${invoice.id} for customer ${invoice.customerId}" }
+          InvoiceStatus.RETRY
         }
 
         else -> {
-          invoiceService.updateStatus(invoice.id, InvoiceStatus.RETRY)
           log.warn(ex) { "Unknown exception during charge of invoice ${invoice.id} for customer ${invoice.customerId}" }
+          notifier.publish(Notification(invoiceId = invoice.id, customerId = invoice.customerId, text = FAILED_TEXT))
+          InvoiceStatus.FAILED
         }
       }
+    } finally {
+      invoiceService.updateStatus(invoice.id, result)
+      log.info { "Updated invoice ${invoice.id} to status $result" }
     }
   }
 }
