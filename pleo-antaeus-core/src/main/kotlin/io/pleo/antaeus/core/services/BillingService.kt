@@ -4,6 +4,7 @@ import io.pleo.antaeus.core.channel.outbound.InvoicePublisher
 import io.pleo.antaeus.models.InvoiceStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 
@@ -23,7 +24,8 @@ class BillingService(
       log.info { "Started billing process" }
       invoiceService.fetchByStatus(status)
         .also { log.info { "Found ${it.size} invoices in $status status to process" } }
-        .forEach { invoicePublisher.publish(it) }
+        .map { launch { invoicePublisher.publish(it) } }
+        .joinAll()
       log.info { "Ended billing process" }
     }
   }
