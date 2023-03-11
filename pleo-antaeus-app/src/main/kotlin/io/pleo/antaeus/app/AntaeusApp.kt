@@ -36,13 +36,13 @@ fun main() {
   // Connect to the database and create the needed tables. Drop any existing data.
   val db = Database
     .connect(
-      url = "jdbc:postgresql://localhost:5432/antaeus",
+      url = "jdbc:postgresql://postgres:5432/antaeus",
       driver = "org.postgresql.Driver",
       user = "pleo",
       password = "randompassword"
     )
     .also {
-      TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
+      TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_REPEATABLE_READ
       transaction(it) {
         addLogger(StdOutSqlLogger)
         // Drop all existing tables to ensure a clean slate on each run
