@@ -1,1 +1,1 @@
-0 0 1 * * /scripts/triggerProcessing.sh
+0 0 1 * * /scripts/triggerPending.sh
