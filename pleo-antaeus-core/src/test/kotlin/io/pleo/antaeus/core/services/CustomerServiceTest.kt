@@ -2,6 +2,7 @@ package io.pleo.antaeus.core.services
 
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import io.pleo.antaeus.core.exceptions.CustomerNotFoundException
 import io.pleo.antaeus.data.AntaeusDal
 import org.junit.jupiter.api.Test
@@ -19,5 +20,7 @@ class CustomerServiceTest {
     assertThrows<CustomerNotFoundException> {
       customerService.fetch(404)
     }
+    
+    verify { dal.fetchCustomer(404) }
   }
 }

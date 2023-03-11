@@ -43,9 +43,6 @@ fun Project.kotlinProject() {
     "testImplementation"("org.junit.jupiter:junit-jupiter-params:$junitVersion")
     "testRuntimeOnly"("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
 
-    // Coroutines Test
-    "testImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
-
     // Testcontainers
     "testImplementation"("org.testcontainers:testcontainers:$testcontainersVersion")
     "testImplementation"("org.testcontainers:junit-jupiter:$testcontainersVersion")
