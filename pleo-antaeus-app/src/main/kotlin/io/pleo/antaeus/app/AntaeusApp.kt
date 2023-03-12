@@ -36,7 +36,7 @@ fun main() {
   // Connect to the database and create the needed tables. Drop any existing data.
   val db = Database
     .connect(
-      url = "jdbc:postgresql://postgres:5432/antaeus",
+      url = "jdbc:postgresql://${System.getenv("POSTGRES_HOST")}/antaeus",
       driver = "org.postgresql.Driver",
       user = "pleo",
       password = "randompassword"

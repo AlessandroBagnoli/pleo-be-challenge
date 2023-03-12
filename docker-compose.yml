@@ -49,6 +49,7 @@ services:
     volumes:
       - antaeus-build-cache:/root/.gradle
     environment:
+      POSTGRES_HOST: postgres:5432
       PUBSUB_EMULATOR_HOST: pubsub:8085
     depends_on:
       postgres:
