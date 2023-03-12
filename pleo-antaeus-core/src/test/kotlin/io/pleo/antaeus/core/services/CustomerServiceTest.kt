@@ -20,7 +20,7 @@ class CustomerServiceTest {
     assertThrows<CustomerNotFoundException> {
       customerService.fetch(404)
     }
-    
+
     verify { dal.fetchCustomer(404) }
   }
 }
