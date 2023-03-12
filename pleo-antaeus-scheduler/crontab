@@ -1,2 +1,2 @@
-0 0 1 * * /scripts/triggerPending.sh
-*/5 * * * * /scripts/triggerRetry.sh
+0 0 1 * * /scripts/trigger_pending.sh
+*/5 * * * * /scripts/trigger_retry.sh

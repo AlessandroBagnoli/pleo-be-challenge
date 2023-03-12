@@ -24,6 +24,7 @@ fun buildPublisher(
   val channel = ManagedChannelBuilder.forTarget(host).usePlaintext().build()
   val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
   return Publisher.newBuilder(topicName)
+    .setEnableMessageOrdering(true)
     .setChannelProvider(channelProvider)
     .setCredentialsProvider(NoCredentialsProvider.create())
     .build()

@@ -31,7 +31,7 @@ services:
         curl -X PUT -H 'Content-Type: application/json' -d '{\"topic\": \"projects/pleo/topics/billing_trigger\"}' http://localhost:8085/v1/projects/pleo/subscriptions/antaeus_svc-billing_trigger &&
         curl -X PUT http://localhost:8085/v1/projects/pleo/topics/notifications &&
         curl -X PUT http://localhost:8085/v1/projects/pleo/topics/invoices &&
-        curl -X PUT -H 'Content-Type: application/json' -d '{\"topic\": \"projects/pleo/topics/invoices\"}' http://localhost:8085/v1/projects/pleo/subscriptions/antaeus_svc-invoices &&
+        curl -X PUT -H 'Content-Type: application/json' -d '{\"topic\": \"projects/pleo/topics/invoices\", \"enableMessageOrdering\": true}' http://localhost:8085/v1/projects/pleo/subscriptions/antaeus_svc-invoices &&
         tail -f /dev/null
       "
 

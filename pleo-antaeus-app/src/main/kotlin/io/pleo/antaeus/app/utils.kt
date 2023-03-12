@@ -1,3 +1,6 @@
+import io.pleo.antaeus.core.exceptions.CurrencyMismatchException
+import io.pleo.antaeus.core.exceptions.CustomerNotFoundException
+import io.pleo.antaeus.core.exceptions.NetworkException
 import io.pleo.antaeus.core.external.PaymentProvider
 import io.pleo.antaeus.data.AntaeusDal
 import io.pleo.antaeus.models.Currency
@@ -32,8 +35,14 @@ internal fun setupInitialData(dal: AntaeusDal) {
 // This is the mocked instance of the payment provider
 internal fun getPaymentProvider(): PaymentProvider {
   return object : PaymentProvider {
-    override fun charge(invoice: Invoice): Boolean {
-      return Random.nextBoolean()
-    }
+    override fun charge(invoice: Invoice) =
+      when (Random.nextInt(5)) {
+        0 -> true
+        1 -> false
+        2 -> throw CurrencyMismatchException(invoiceId = invoice.id, customerId = invoice.customerId)
+        3 -> throw CustomerNotFoundException(id = invoice.customerId)
+        4 -> throw NetworkException()
+        else -> throw Exception("Not handled")
+      }
   }
 }

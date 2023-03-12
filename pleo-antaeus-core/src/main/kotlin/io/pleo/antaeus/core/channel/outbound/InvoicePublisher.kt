@@ -19,7 +19,7 @@ class InvoicePublisher(
 
   fun publish(invoice: Invoice) {
     val data = ByteString.copyFromUtf8(Gson().toJson(invoice))
-    val pubsubMessage = PubsubMessage.newBuilder().setData(data).build()
+    val pubsubMessage = PubsubMessage.newBuilder().setData(data).setOrderingKey("myOrderingKey").build()
 
     val messageIdFuture = publisher.publish(pubsubMessage)
 

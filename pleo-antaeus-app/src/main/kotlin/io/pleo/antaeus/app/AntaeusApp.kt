@@ -42,7 +42,7 @@ fun main() {
       password = "randompassword"
     )
     .also {
-      TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_REPEATABLE_READ
+      TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
       transaction(it) {
         addLogger(StdOutSqlLogger)
         // Drop all existing tables to ensure a clean slate on each run
