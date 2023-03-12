@@ -3,6 +3,8 @@ plugins {
   id("org.unbroken-dome.test-sets")
 }
 
+dataLibs()
+
 kotlinProject()
 
 dependencies {
