@@ -32,7 +32,7 @@ for the invoices in `RETRY` status.
 
 ## Architectural overview of the proposed solution
 
-![Building blocks](docs/building_blocks.png)
+![Building blocks](docs/building_blocks.svg)
 
 ## Process
 
