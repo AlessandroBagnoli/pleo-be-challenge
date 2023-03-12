@@ -2,14 +2,12 @@
 
 This repository is a personal solution proposal of the [Pleo Backend Challenge](https://github.com/pleo-io/antaeus).
 The task is to build the logic that will schedule payments of invoices on the first of the month. The solution requires
-docker to be installed on your machine, and relies on Postgres for the persistence layer and on Google Pub/Sub (via the
+docker to be installed on your machine, and relies on Postgres for the persistence layer and on Google PubSub (via the
 official emulator) for the asynchronous communication between different application components and other external
 systems.
 
 <!-- TOC -->
   * [pleo-be-challenge](#pleo-be-challenge)
-  * [Running the solution](#running-the-solution)
-  * [Architectural overview of the proposed solution](#architectural-overview-of-the-proposed-solution)
   * [Process](#process)
     * [Familiarize with the project (1h spent)](#familiarize-with-the-project--1h-spent-)
     * [Work plan (1h spent)](#work-plan--1h-spent-)
@@ -17,46 +15,10 @@ systems.
     * [Scheduling (1h spent)](#scheduling--1h-spent-)
     * [Focus on scalability (4h)](#focus-on-scalability--4h-)
     * [Testing (3h spent)](#testing--3h-spent-)
+  * [Architectural overview](#architectural-overview)
+  * [Running the solution](#running-the-solution)
   * [Future improvements](#future-improvements)
 <!-- TOC -->
-
-## Running the solution
-
-Running `./docker-start.sh` will execute a `docker-compose up -d` that will start automatically the needed services.
-
-Once the services are up and running, the `scheduler` will execute the jobs as explained above. However, if you don't
-want to wait for the first day of the month (understandable :smile:), you can import in Postman the collection located
-in the `collection` folder. It contains basically the same requests that the `scheduler` makes: one which publishes a
-message on PubSub for triggering the processing of the invoices in `PENDING` status, and the other which does the same
-for the invoices in `RETRY` status.
-
-## Architectural overview of the proposed solution
-
-![Building blocks](docs/building_blocks.svg)
-
-````mermaid
-sequenceDiagram
-        participant CS as Scheduler
-        participant PS as PubSub
-        participant BS as BillingService
-        participant IH as InvoiceHandler
-        participant PG as Postgres
-        Note over CS: every first day of the month at 00:00 UTC for invoice in PENDING status
-        Note over CS: every 5 minutes for invoices in RETRY status
-        CS--)PS: publish trigger on billing_trigger topic
-        PS--)BS: trigger delivered via subscriber on antaeus_svc-billing_trigger subscription
-        BS->>PG: get all invoices in status
-        PG->>BS: 
-        loop each invoice
-            BS--)PS: publish invoice on invoices topic
-        end
-        PS--)IH: invoice delivered via subscriber on antaeus_svc-invoices subscription
-        IH->>IH: handle the invoice calling PaymentProvider
-        opt in case of success or unrecoverable exception
-            IH--)PS: send notification to customer with the status
-        end
-        IH->>PG: save the status
-````
 
 ## Process
 
@@ -116,6 +78,44 @@ test which:
 * Publishes the message used for triggering the invoice processing flow on the dedicated PubSub topic
 * Awaits for the successfully paid invoice notification to be correctly delivered
 * Asserts that on the DB the invoice is in `PAID` status
+
+## Architectural overview
+
+![Building blocks](docs/building_blocks.svg)
+
+````mermaid
+sequenceDiagram
+        participant CS as Scheduler
+        participant PS as PubSub
+        participant BS as BillingService
+        participant IH as InvoiceHandler
+        participant PG as Postgres
+        Note over CS: every first day of the month at 00:00 UTC for invoice in PENDING status
+        Note over CS: every 5 minutes for invoices in RETRY status
+        CS--)PS: publish trigger on billing_trigger topic via PubSub REST API
+        PS--)BS: trigger delivered via subscriber on antaeus_svc-billing_trigger subscription
+        BS->>PG: get all invoices in status
+        PG->>BS: 
+        loop each invoice
+            BS--)PS: publish invoice on invoices topic
+        end
+        PS--)IH: invoice delivered via subscriber on antaeus_svc-invoices subscription
+        IH->>IH: handle the invoice calling PaymentProvider
+        opt in case of success or unrecoverable exception
+            IH--)PS: send notification to customer with the status
+        end
+        IH->>PG: save the status
+````
+
+## Running the solution
+
+Running `./docker-start.sh` will execute a `docker-compose up -d` that will start automatically the needed services.
+
+Once the services are up and running, the `scheduler` will execute the jobs as explained above. However, if you don't
+want to wait for the first day of the month (understandable :smile:), you can import in Postman the collection located
+in the `collection` folder. It contains basically the same requests that the `scheduler` makes: one which publishes a
+message on PubSub for triggering the processing of the invoices in `PENDING` status, and the other which does the same
+for the invoices in `RETRY` status, via the REST APIs exposed by PubSub
 
 ## Future improvements
 
