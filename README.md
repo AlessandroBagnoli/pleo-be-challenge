@@ -34,6 +34,30 @@ for the invoices in `RETRY` status.
 
 ![Building blocks](docs/building_blocks.svg)
 
+````mermaid
+sequenceDiagram
+        participant CS as Scheduler
+        participant PS as PubSub
+        participant BS as BillingService
+        participant IH as InvoiceHandler
+        participant PG as Postgres
+        Note over CS: every first day of the month at 00:00 UTC for invoice in PENDING status
+        Note over CS: every 5 minutes for invoices in RETRY status
+        CS--)PS: publish trigger on billing_trigger topic
+        PS--)BS: trigger delivered via subscriber on antaeus_svc-billing_trigger subscription
+        BS->>PG: get all invoices in status
+        PG->>BS: 
+        loop each invoice
+            BS--)PS: publish invoice on invoices topic
+        end
+        PS--)IH: invoice delivered via subscriber on antaeus_svc-invoices subscription
+        IH->>IH: handle the invoice calling PaymentProvider
+        opt in case of success or unrecoverable exception
+            IH--)PS: send notification to customer with the status
+        end
+        IH->>PG: save the status
+````
+
 ## Process
 
 ### Familiarize with the project (1h spent)
