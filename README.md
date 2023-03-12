@@ -32,6 +32,8 @@ for the invoices in `RETRY` status.
 
 ## Architectural overview of the proposed solution
 
+![Building blocks](docs/building_blocks.png)
+
 ## Process
 
 ### Familiarize with the project (1h spent)
