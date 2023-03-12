@@ -75,12 +75,16 @@ Updated Gradle and dependencies to the newest versions
 
 ### Core functionality (1h spent)
 
+TODO
+
 ### Scheduling (1h spent)
 
+TODO
 The first approach I used included a Kotlin coroutine running indefinitely...I then chose to use a containerized crontab
 
 ### Focus on scalability (4h)
 
+TODO
 Decoupled the BillingService in order to process each invoice totally independently via pubsub
 
 Replaced sqlite with postgres
@@ -114,3 +118,5 @@ test which:
 * Asserts that on the DB the invoice is in `PAID` status
 
 ## Future improvements
+
+TODO
