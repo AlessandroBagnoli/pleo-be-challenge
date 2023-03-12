@@ -1,3 +1,37 @@
+## pleo-be-challenge
+
+This repository is a personal solution proposal of the [Pleo Backend Challenge](https://github.com/pleo-io/antaeus).
+The task is to build the logic that will schedule payments of invoices on the first of the month. The solution requires
+docker to be installed on your machine, and relies on Postgres for the persistence layer and on Google Pub/Sub (via the
+official emulator) for the asynchronous communication between different application components and other external
+systems.
+
+<!-- TOC -->
+  * [pleo-be-challenge](#pleo-be-challenge)
+  * [Running the solution](#running-the-solution)
+  * [Architectural overview of the proposed solution](#architectural-overview-of-the-proposed-solution)
+  * [Process](#process)
+    * [Familiarize with the project (1h spent)](#familiarize-with-the-project--1h-spent-)
+    * [Work plan (1h spent)](#work-plan--1h-spent-)
+    * [Core functionality (1h spent)](#core-functionality--1h-spent-)
+    * [Scheduling (1h spent)](#scheduling--1h-spent-)
+    * [Focus on scalability (4h)](#focus-on-scalability--4h-)
+    * [Testing (3h spent)](#testing--3h-spent-)
+  * [Future improvements](#future-improvements)
+<!-- TOC -->
+
+## Running the solution
+
+Running `./docker-start.sh` will execute a `docker-compose up -d` that will start automatically the needed services.
+
+Once the services are up and running, the `scheduler` will execute the jobs as explained above. However, if you don't
+want to wait for the first day of the month (understandable :smile:), you can import in Postman the collection located
+in the `collection` folder. It contains basically the same requests that the `scheduler` makes: one which publishes a
+message on PubSub for triggering the processing of the invoices in `PENDING` status, and the other which does the same
+for the invoices in `RETRY` status.
+
+## Architectural overview of the proposed solution
+
 ## Process
 
 ### Familiarize with the project (1h spent)
@@ -53,16 +87,4 @@ test which:
 * Awaits for the successfully paid invoice notification to be correctly delivered
 * Asserts that on the DB the invoice is in `PAID` status
 
-### Architectural overview of the proposed solution
-
-### Running the solution
-
-Running `./docker-start.sh` will execute a `docker-compose up -d` that will start automatically the needed services.
-
-Once the services are up and running, the `scheduler` will execute the jobs as explained above. However, if you don't
-want to wait for the first day of the month (understandable :smile:), you can import in Postman the collection located
-in the `collection` folder. It contains basically the same requests that the `scheduler` makes: one which publishes a
-message on PubSub for triggering the processing of the invoices in `PENDING` status, and the other which does the same
-for the invoices in `RETRY` status.
-
-### Future improvements
+## Future improvements
