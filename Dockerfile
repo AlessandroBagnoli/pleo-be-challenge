@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk11:x86_64-ubuntu-jdk-11.0.18_10
+FROM adoptopenjdk/openjdk11:jdk-11.0.18_10-ubuntu
 
 COPY . /anteus
 WORKDIR /anteus
