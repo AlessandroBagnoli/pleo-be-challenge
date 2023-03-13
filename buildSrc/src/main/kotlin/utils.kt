@@ -52,7 +52,7 @@ fun Project.kotlinProject() {
     "testImplementation"("org.testcontainers:gcloud:$testcontainersVersion")
 
     // Awaitility
-    "testImplementation"("org.awaitility:awaitility-kotlin:4.2.0")
+    "testImplementation"("org.awaitility:awaitility-kotlin:$awaitilityVersion")
   }
 }
 
