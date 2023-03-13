@@ -17,10 +17,10 @@ class InvoiceSubscriber(
     try {
       log.debug { "Received message with id ${message.messageId}, data: ${message.data.toStringUtf8()}" }
       invoiceHandler.process(Gson().fromJson(message.data.toStringUtf8(), Invoice::class.java))
-      consumer.ack()
     } catch (ex: Exception) {
       log.warn(ex) { "Exception in message receiver for message with id ${message.messageId}, data: ${message.data.toStringUtf8()}" }
-      consumer.nack()
+    } finally {
+      consumer.ack()
     }
   }
 
