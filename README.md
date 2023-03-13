@@ -11,16 +11,21 @@ systems.
   * [Process](#process)
     * [Familiarize with the project (1h spent)](#familiarize-with-the-project--1h-spent-)
     * [Work plan (1h spent)](#work-plan--1h-spent-)
-    * [Core functionality (1h spent)](#core-functionality--1h-spent-)
-    * [Scheduling (1h spent)](#scheduling--1h-spent-)
-    * [Focus on scalability (4h)](#focus-on-scalability--4h-)
+    * [Core functionality (2h spent)](#core-functionality--2h-spent-)
+    * [Scheduling (2h spent)](#scheduling--2h-spent-)
+    * [Focus on scalability and reliability (4h spent)](#focus-on-scalability-and-reliability--4h-spent-)
     * [Testing (3h spent)](#testing--3h-spent-)
   * [Architectural overview](#architectural-overview)
+    * [Sequence diagram](#sequence-diagram)
   * [Running the solution](#running-the-solution)
-  * [Future improvements](#future-improvements)
+  * [Future improvements and conclusion](#future-improvements-and-conclusion)
 <!-- TOC -->
 
 ## Process
+
+_Please note that the commit on the master branch is squashed, but you can still see the commit history from the
+relevant
+[PR](https://github.com/AlessandroBagnoli/pleo-be-challenge/pull/2) history._
 
 ### Familiarize with the project (1h spent)
 
@@ -29,33 +34,104 @@ Updated Gradle and dependencies to the newest versions
 
 ### Work plan (1h spent)
 
-1. Write the main business logic for fetching PENDING invoices from the DAL, and process each one of them
-2. Error handling
-3. Scheduling
-4. Focus on scalability and reliability
-5. Unit and functional testing
+1. Core functionality
+2. Scheduling
+3. Focus on scalability and reliability
+4. Unit and functional testing
 
-### Core functionality (1h spent)
+### Core functionality (2h spent)
 
-TODO
+The first step I did was implementing the main business logic which included:
 
-### Scheduling (1h spent)
+1. Fetching the invoices in `PENDING` status from the DAL
+2. Processing each one of them calling the `charge` method of the `PaymentProvider`
+3. Handling the outcomes and possible exceptions that could occur during the charge phase
 
-TODO
-The first approach I used included a Kotlin coroutine running indefinitely...I then chose to use a containerized crontab
+Since the `PaymentProvider` may return some kind of unsuccessful outcomes that could be retried, as well as others that
+could be unrecoverable, I decided to introduce two new statuses for the invoices: `FAILED` for those that incurred in
+unrecoverable errors during the charge (like the `CustomerNotFoundException` and the `CurrencyMismatchException`),
+and `RETRY` for those that can be retried because of recoverable outcomes (like the `NetworkException`, or the missed
+charging because of insufficient balance). All this was implemented in the `BillingService` class, and because it is
+a potentially time-consuming operation I decided to leverage the coroutines offered by the Kotlin language, without
+blocking the main thread during the process.
 
-### Focus on scalability (4h)
+### Scheduling (2h spent)
 
-TODO
-Decoupled the BillingService in order to process each invoice totally independently via pubsub
+I still needed to find a way to schedule the billing process of the invoices the first day of each month: for a rapid
+prototyping I initially implemented a first version in which a coroutine was running indefinitely and delaying the
+execution by the amount of time between the first day of the next month, and
+now: [here](https://github.com/pleo-io/antaeus/commit/2bb8ec4e93d636914fb3c4729b150ff4bfb20788).<br>
+Of course, this is a pretty naive approach and things can go wrong in many ways going ahead with it. Also, we
+are adding another responsibility in our Antaeus service, which is not ideal. Said that, what I decided to do in the
+end, was to create an independent scheduler using `cron` inside a dedicated docker container, refactoring the already
+in place docker implementation with a docker-compose file.
 
-Replaced sqlite with postgres
+With a crontab we have now full flexibility regarding the job
+scheduling, and we separated responsibilities from Antaeus. We still need one thing to figure out though: how to tell
+Antaeus to initiate the billing process? I had two possible approaches in mind:
+
+* Do a standard HTTP call to Antaeus leveraging the already in place HTTP controller
+* Publish a message on a messaging service
+
+I decided to go with the second option in order to decouple as much as possible the scheduler from Antaeus. In order to
+achieve that, I chose Google PubSub as my go-to messaging service. Again, also PubSub has been containerized, using the
+official emulator provided by Google.
+
+The publishing of the message on PubSub from the scheduler is performed calling a REST endpoint exposed directly by
+PubSub, encoding the message we want to publish in base64 format:
+
+```shell
+curl --location 'http://pubsub:8085/v1/projects/pleo/topics/billing_trigger:publish' \
+  --header 'Content-Type: application/json' \
+  --data '{
+      "messages": [
+          {
+              "data": "UEVORElORw=="
+          }
+      ]
+  }'
+```
+
+Here, `UEVORElORw==` is the base64 representation of the string `PENDING`. So what we are doing here is publishing
+the string `PENDING` on the `billing_trigger` topic, which can be later on be received by Antaeus, totally
+asynchronously and start the billing process for all those invoices in `PENDING` status.
+
+Since we also introduced the `RETRY` status for invoices, as mentioned before, I thought it would be nice to add also a
+cron job executed every 5 minutes which publishes the string `RETRY` on the same topic, so that when it is delivered to
+Antaeus, it knows that it has to start the billing process for those specific invoices.
+
+### Focus on scalability and reliability (4h spent)
+
+At this point I had an overall basic solution which does the job as per the requirements, but there was still some room
+for improvements to make the solution more scalable and reliable. In particular what I decided to do was:
+
+* Replacing sqlite with Postgres
+* Decoupling the charging operation of the invoice from the BillingInvoice, treating each invoice independently
+
+For the first point, I refactored once again my docker-compose file including an instance of Postgres. Antaeus wise,
+thanks to the `Exposed` library, replacing the connection parameters with the connection string and the driver name
+required to establish a connection with Postgres was enough.
+
+For the second point, I decided to leverage the already set up infrastructure, using once again PubSub: each invoice
+needed to be processed retrieved by the BillingService, is published as a single message on a dedicated PubSub topic.
+From now on, we can think about who should be responsible for processing the single invoice, and for the sake of
+simplicity I decided to use a new subscriber always on Antaeus which handles the invoice: `InvoiceHandler`.
+
+> Please note that this specific part could have been handled differently in a production environment: for instance,
+> using GCP as cloud provider of choice, we could also use a serverless function deployed
+> on [Cloud Functions](https://cloud.google.com/functions) listening for invoices event, delegating the charging process
+> outside Antaeus.
+
+As a bonus point, I also took the chance to add the sending of a notification via PubSub in case of successful
+operation, or unrecoverable exception during the charging phase of the invoice.
+
+The final flow can be visually pictured in the [sequence diagram](#sequence-diagram) paragraph down below.
 
 ### Testing (3h spent)
 
-The testing was done via unit and functional testing, in particular I unit tested both the BillingService and the
-InvoiceHandler. The former is responsible for gathering all the invoices in a given state, while the latter takes care
-of handling a single invoice, atomically.
+The testing was done via unit and functional testing, in particular I unit tested both the `BillingService` and the
+`InvoiceHandler`. The former is responsible for gathering all the invoices in a given state and publish them on a
+dedicated PubSub topic, while the latter takes care of handling a single invoice, atomically.
 
 However, unit testing may not be enough for this kind of projects: we need to make
 sure that also the interactions with the external components like the Postgres DB and PubSub work as expected before
@@ -79,9 +155,21 @@ test which:
 * Awaits for the successfully paid invoice notification to be correctly delivered
 * Asserts that on the DB the invoice is in `PAID` status
 
+Yes, I am aware that this full functional flow test is a bit simplistic. Assuming that we have only one invoice to be
+processed is an optimistic and far from a real world scenario where we could expect thousands of invoices to process,
+but still, it's a good starting point to make sure that the flow works as expected :smile:.
+
 ## Architectural overview
 
+Building blocks of the solution. Every yellow square represents a self-contained docker service:
+
 ![Building blocks](docs/building_blocks.svg)
+
+### Sequence diagram
+
+Here you should see the sequence diagram automatically rendered in your IDE/Github. If that is not the case, and you
+see only some code, please copy and paste it on the [mermaid live editor](https://mermaid.live/) to see the visual
+representation.
 
 ````mermaid
 sequenceDiagram
@@ -115,8 +203,17 @@ Once the services are up and running, the `scheduler` will execute the jobs as e
 want to wait for the first day of the month (understandable :smile:), you can import in Postman the collection located
 in the `collection` folder. It contains basically the same requests that the `scheduler` makes: one which publishes a
 message on PubSub for triggering the processing of the invoices in `PENDING` status, and the other which does the same
-for the invoices in `RETRY` status, via the REST APIs exposed by PubSub
+for the invoices in `RETRY` status, via the REST APIs exposed by PubSub.
 
-## Future improvements
+## Future improvements and conclusion
 
-TODO
+There is still some room for improvements and decisions to be taken, like:
+
+- TODO
+- TODO
+- TODO
+
+Overall I really enjoyed the time spent thinking about a solution and implementing it.<br>
+I liked the challenge: it was different from the good-old "write a Spring Boot CRUD application" kind of
+challenge :smile: and it also gave me the opportunity to know and put hands on a few libraries and tools I never worked
+with, like `Gradle` (always used `Maven`), `Exposed`, `Javalin`, and `Mockk` (always used `Mockito`).
