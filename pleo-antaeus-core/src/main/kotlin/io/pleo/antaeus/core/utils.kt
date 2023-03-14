@@ -19,8 +19,6 @@ fun buildPublisher(
   host: String = System.getenv("PUBSUB_EMULATOR_HOST")
 ): Publisher {
   val topicName = TopicName.of(project, topic)
-  log.info { "Using pubsub located at $host" }
-
   val channel = ManagedChannelBuilder.forTarget(host).usePlaintext().build()
   val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
   return Publisher.newBuilder(topicName)
@@ -37,8 +35,6 @@ fun buildSubscriber(
   handler: MessageReceiver
 ): Subscriber {
   val subscriptionName = ProjectSubscriptionName.of(project, subscription)
-  log.info { "Using pubsub located at $host" }
-
   val channel = ManagedChannelBuilder.forTarget(host).usePlaintext().build()
   val channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel))
   return Subscriber.newBuilder(subscriptionName, handler)

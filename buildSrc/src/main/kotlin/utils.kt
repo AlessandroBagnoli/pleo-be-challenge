@@ -14,6 +14,7 @@ private const val mockkVersion = "1.13.4"
 
 private const val exposedVersion = "0.17.14"
 private const val postgresqlVersion = "42.5.4"
+private const val hikariCPVersion = "5.0.1"
 
 private const val javalinVersion = "5.4.2"
 
@@ -62,7 +63,8 @@ fun Project.kotlinProject() {
 fun Project.dataLibs() {
   dependencies {
     "implementation"("org.jetbrains.exposed:exposed:$exposedVersion")
-    "implementation"("org.postgresql:postgresql:$postgresqlVersion")
+    "runtimeOnly"("org.postgresql:postgresql:$postgresqlVersion")
+    "implementation"("com.zaxxer:HikariCP:$hikariCPVersion")
     "testImplementation"("org.testcontainers:postgresql:$testcontainersVersion")
   }
 }

@@ -1,5 +1,7 @@
 package io.pleo.antaeus.data
 
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import io.pleo.antaeus.models.Currency
 import io.pleo.antaeus.models.InvoiceStatus
 import io.pleo.antaeus.models.Money
@@ -7,7 +9,6 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
-import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -16,7 +17,6 @@ import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import java.math.BigDecimal
-import java.sql.Connection
 import kotlin.random.Random
 
 @Testcontainers
@@ -38,17 +38,17 @@ class AntaeusDalTest {
     @JvmStatic
     @BeforeAll
     fun beforeAll() {
+      val config = HikariConfig().apply {
+        jdbcUrl = postgresEmulator.jdbcUrl
+        driverClassName = "org.postgresql.Driver"
+        username = postgresEmulator.username
+        password = postgresEmulator.password
+        maximumPoolSize = 10
+        transactionIsolation = "TRANSACTION_SERIALIZABLE"
+      }
+      val dataSource = HikariDataSource(config)
       // Connect to the database and create the needed tables. Drop any existing data.
-      db = Database
-        .connect(
-          url = postgresEmulator.jdbcUrl,
-          driver = "org.postgresql.Driver",
-          user = postgresEmulator.username,
-          password = postgresEmulator.password
-        )
-        .also {
-          TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
-        }
+      db = Database.connect(dataSource)
     }
 
   }

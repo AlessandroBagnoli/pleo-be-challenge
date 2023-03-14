@@ -7,18 +7,20 @@ official emulator) for the asynchronous communication between different applicat
 systems.
 
 <!-- TOC -->
-  * [pleo-be-challenge](#pleo-be-challenge)
-  * [Process](#process)
+
+* [pleo-be-challenge](#pleo-be-challenge)
+* [Process](#process)
     * [Familiarize with the project (1h spent)](#familiarize-with-the-project--1h-spent-)
     * [Work plan (1h spent)](#work-plan--1h-spent-)
     * [Core functionality (2h spent)](#core-functionality--2h-spent-)
     * [Scheduling (2h spent)](#scheduling--2h-spent-)
     * [Focus on scalability and reliability (4h spent)](#focus-on-scalability-and-reliability--4h-spent-)
     * [Testing (3h spent)](#testing--3h-spent-)
-  * [Architectural overview](#architectural-overview)
+* [Architectural overview](#architectural-overview)
     * [Sequence diagram](#sequence-diagram)
-  * [Running the solution](#running-the-solution)
-  * [Future improvements and conclusion](#future-improvements-and-conclusion)
+* [Running the solution](#running-the-solution)
+* [Future improvements and conclusion](#future-improvements-and-conclusion)
+
 <!-- TOC -->
 
 ## Process
@@ -108,9 +110,13 @@ for improvements to make the solution more scalable and reliable. In particular 
 * Replacing sqlite with Postgres
 * Decoupling the charging operation of the invoice from the BillingInvoice, treating each invoice independently
 
-For the first point, I refactored once again my docker-compose file including an instance of Postgres. Antaeus wise,
+For the first point, I refactored once again the docker-compose file including an instance of Postgres. Antaeus wise,
 thanks to the `Exposed` library, replacing the connection parameters with the connection string and the driver name
-required to establish a connection with Postgres was enough.
+required to establish a connection with Postgres was enough. I also took the chance to do an additional optimization
+using `HikariCP` for creating a connection pool at the startup of the application, avoiding to create a new connection
+to the database before every query: as the application scales up, the constant opening and closing of connections
+becomes more expensive and potentially can begin to impact the app's performance. Also for this `Exposed` came to help, 
+since it provides 
 
 For the second point, I decided to leverage the already set up infrastructure, using once again PubSub: each invoice
 needed to be processed retrieved by the BillingService, is published as a single message on a dedicated PubSub topic.

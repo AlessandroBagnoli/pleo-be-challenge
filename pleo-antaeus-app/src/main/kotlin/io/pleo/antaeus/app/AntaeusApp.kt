@@ -7,6 +7,8 @@
 
 package io.pleo.antaeus.app
 
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import getPaymentProvider
 import io.pleo.antaeus.core.channel.inbound.InvoiceSubscriber
 import io.pleo.antaeus.core.channel.inbound.TriggerSubscriber
@@ -24,33 +26,33 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
-import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import setupInitialData
-import java.sql.Connection
 
 fun main() {
   // The tables to create in the database.
   val tables = arrayOf(InvoiceTable, CustomerTable)
 
+  // Connection pool configuration
+  val config = HikariConfig().apply {
+    jdbcUrl = "jdbc:postgresql://${System.getenv("POSTGRES_HOST")}/antaeus"
+    driverClassName = "org.postgresql.Driver"
+    username = "pleo"
+    password = "randompassword"
+    maximumPoolSize = 10
+    transactionIsolation = "TRANSACTION_SERIALIZABLE"
+  }
+  val dataSource = HikariDataSource(config)
   // Connect to the database and create the needed tables. Drop any existing data.
-  val db = Database
-    .connect(
-      url = "jdbc:postgresql://${System.getenv("POSTGRES_HOST")}/antaeus",
-      driver = "org.postgresql.Driver",
-      user = "pleo",
-      password = "randompassword"
-    )
-    .also {
-      TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
-      transaction(it) {
-        addLogger(StdOutSqlLogger)
-        // Drop all existing tables to ensure a clean slate on each run
-        SchemaUtils.drop(*tables)
-        // Create all tables
-        SchemaUtils.create(*tables)
-      }
+  val db = Database.connect(dataSource).also {
+    transaction(it) {
+      addLogger(StdOutSqlLogger)
+      // Drop all existing tables to ensure a clean slate on each run
+      SchemaUtils.drop(*tables)
+      // Create all tables
+      SchemaUtils.create(*tables)
     }
+  }
 
   // Set up data access layer.
   val dal = AntaeusDal(db = db)

@@ -4,6 +4,8 @@ import com.google.cloud.pubsub.v1.MessageReceiver
 import com.google.gson.Gson
 import com.google.protobuf.ByteString
 import com.google.pubsub.v1.PubsubMessage
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import io.pleo.antaeus.core.channel.inbound.InvoiceSubscriber
 import io.pleo.antaeus.core.channel.inbound.TriggerSubscriber
 import io.pleo.antaeus.core.channel.outbound.InvoicePublisher
@@ -24,7 +26,6 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.addLogger
-import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
@@ -36,7 +37,6 @@ import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import java.math.BigDecimal
-import java.sql.Connection
 
 @Testcontainers
 class BillingFlowTest {
@@ -68,16 +68,17 @@ class BillingFlowTest {
     internal fun beforeAll() {
       PubSubTestConfig.setupPubSubEmulator(pubsubEmulator)
 
-      db = Database
-        .connect(
-          url = postgresEmulator.jdbcUrl,
-          driver = "org.postgresql.Driver",
-          user = postgresEmulator.username,
-          password = postgresEmulator.password
-        )
-        .also {
-          TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
-        }
+      val config = HikariConfig().apply {
+        jdbcUrl = postgresEmulator.jdbcUrl
+        driverClassName = "org.postgresql.Driver"
+        username = postgresEmulator.username
+        password = postgresEmulator.password
+        maximumPoolSize = 10
+        transactionIsolation = "TRANSACTION_SERIALIZABLE"
+      }
+      val dataSource = HikariDataSource(config)
+      // Connect to the database and create the needed tables. Drop any existing data.
+      db = Database.connect(dataSource)
 
       // dummy implementation which returns always true
       val paymentProvider = object : PaymentProvider {
