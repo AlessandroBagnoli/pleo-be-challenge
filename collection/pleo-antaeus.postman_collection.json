@@ -1,0 +1,74 @@
+{
+	"info": {
+		"_postman_id": "efc7f742-8ce2-4162-94f0-0b902380eb71",
+		"name": "pleo-antaeus",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "9081389"
+	},
+	"item": [
+		{
+			"name": "publish trigger event for PENDING invoices",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"messages\": [\n        {\n            \"data\": \"UEVORElORw==\"\n        }\n    ]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8085/v1/projects/pleo/topics/billing_trigger:publish",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8085",
+					"path": [
+						"v1",
+						"projects",
+						"pleo",
+						"topics",
+						"billing_trigger:publish"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "publish trigger event for RETRY invoices",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"messages\": [\n        {\n            \"data\": \"UkVUUlk=\"\n        }\n    ]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8085/v1/projects/pleo/topics/billing_trigger:publish",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8085",
+					"path": [
+						"v1",
+						"projects",
+						"pleo",
+						"topics",
+						"billing_trigger:publish"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

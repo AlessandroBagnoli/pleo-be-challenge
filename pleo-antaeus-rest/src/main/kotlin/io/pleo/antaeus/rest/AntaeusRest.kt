@@ -4,16 +4,18 @@
 
 package io.pleo.antaeus.rest
 
+import com.google.gson.GsonBuilder
 import io.javalin.Javalin
 import io.javalin.apibuilder.ApiBuilder.get
 import io.javalin.apibuilder.ApiBuilder.path
+import io.javalin.json.JsonMapper
 import io.pleo.antaeus.core.exceptions.EntityNotFoundException
 import io.pleo.antaeus.core.services.CustomerService
 import io.pleo.antaeus.core.services.InvoiceService
 import mu.KotlinLogging
+import java.lang.reflect.Type
 
 private val logger = KotlinLogging.logger {}
-private val thisFile: () -> Unit = {}
 
 class AntaeusRest(
   private val invoiceService: InvoiceService,
@@ -21,12 +23,24 @@ class AntaeusRest(
 ) : Runnable {
 
   override fun run() {
-    app.start(7000)
+    app.start(8080)
+  }
+
+  private val gson = GsonBuilder().create()
+
+  private val gsonMapper = object : JsonMapper {
+
+    override fun <T : Any> fromJsonString(json: String, targetType: Type): T =
+      gson.fromJson(json, targetType)
+
+    override fun toJsonString(obj: Any, type: Type) =
+      gson.toJson(obj)
+
   }
 
   // Set up Javalin rest app
   private val app = Javalin
-    .create()
+    .create { it.jsonMapper(gsonMapper) }
     .apply {
       // InvoiceNotFoundException: return 404 HTTP status code
       exception(EntityNotFoundException::class.java) { _, ctx ->
@@ -61,8 +75,8 @@ class AntaeusRest(
               it.json(invoiceService.fetchAll())
             }
 
-            // URL: /rest/v1/invoices/{:id}
-            get(":id") {
+            // URL: /rest/v1/invoices/{id}
+            get("{id}") {
               it.json(invoiceService.fetch(it.pathParam("id").toInt()))
             }
           }
@@ -73,8 +87,8 @@ class AntaeusRest(
               it.json(customerService.fetchAll())
             }
 
-            // URL: /rest/v1/customers/{:id}
-            get(":id") {
+            // URL: /rest/v1/customers/{id}
+            get("{id}") {
               it.json(customerService.fetch(it.pathParam("id").toInt()))
             }
           }

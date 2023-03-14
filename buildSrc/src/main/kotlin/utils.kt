@@ -2,7 +2,21 @@ import org.gradle.api.Project
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.kotlin
 
-const val junitVersion = "5.6.0"
+private const val coroutinesVersion = "1.6.4"
+private const val googleCloudPubsubVersion = "1.123.5"
+private const val gsonVersion = "2.10.1"
+private const val junitVersion = "5.9.2"
+private const val testcontainersVersion = "1.17.6"
+private const val awaitilityVersion = "4.2.0"
+private const val slf4jSimpleVersion = "2.0.6"
+private const val kotlinLoggingVersion = "3.0.5"
+private const val mockkVersion = "1.13.4"
+
+private const val exposedVersion = "0.17.14"
+private const val postgresqlVersion = "42.5.4"
+private const val hikariCPVersion = "5.0.1"
+
+private const val javalinVersion = "5.4.2"
 
 /**
  * Configures the current project as a Kotlin project by adding the Kotlin `stdlib` as a dependency.
@@ -12,17 +26,34 @@ fun Project.kotlinProject() {
     // Kotlin libs
     "implementation"(kotlin("stdlib"))
 
+    // Coroutines
+    "implementation"("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+
+    // PubSub client library
+    "implementation"("com.google.cloud:google-cloud-pubsub:$googleCloudPubsubVersion")
+
+    // GSON for Json de/serialization
+    "implementation"("com.google.code.gson:gson:$gsonVersion")
+
     // Logging
-    "implementation"("org.slf4j:slf4j-simple:1.7.30")
-    "implementation"("io.github.microutils:kotlin-logging:1.7.8")
+    "implementation"("org.slf4j:slf4j-simple:$slf4jSimpleVersion")
+    "implementation"("io.github.microutils:kotlin-logging:$kotlinLoggingVersion")
 
     // Mockk
-    "testImplementation"("io.mockk:mockk:1.9.3")
+    "testImplementation"("io.mockk:mockk:$mockkVersion")
 
     // JUnit 5
     "testImplementation"("org.junit.jupiter:junit-jupiter-api:$junitVersion")
     "testImplementation"("org.junit.jupiter:junit-jupiter-params:$junitVersion")
-    "runtime"("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
+    "testRuntimeOnly"("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
+
+    // Testcontainers
+    "testImplementation"("org.testcontainers:testcontainers:$testcontainersVersion")
+    "testImplementation"("org.testcontainers:junit-jupiter:$testcontainersVersion")
+    "testImplementation"("org.testcontainers:gcloud:$testcontainersVersion")
+
+    // Awaitility
+    "testImplementation"("org.awaitility:awaitility-kotlin:$awaitilityVersion")
   }
 }
 
@@ -31,7 +62,18 @@ fun Project.kotlinProject() {
  */
 fun Project.dataLibs() {
   dependencies {
-    "implementation"("org.jetbrains.exposed:exposed:0.17.7")
-    "implementation"("org.xerial:sqlite-jdbc:3.30.1")
+    "implementation"("org.jetbrains.exposed:exposed:$exposedVersion")
+    "runtimeOnly"("org.postgresql:postgresql:$postgresqlVersion")
+    "implementation"("com.zaxxer:HikariCP:$hikariCPVersion")
+    "testImplementation"("org.testcontainers:postgresql:$testcontainersVersion")
+  }
+}
+
+/**
+ * Configures web layer libs needed for exposing REST APIs
+ */
+fun Project.webLibs() {
+  dependencies {
+    "implementation"("io.javalin:javalin:$javalinVersion")
   }
 }

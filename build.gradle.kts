@@ -2,7 +2,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   base
-  kotlin("jvm") version "1.3.70" apply false
+  kotlin("jvm") version "1.8.10" apply false
+  id("org.unbroken-dome.test-sets") version "4.0.0"
 }
 
 allprojects {
@@ -11,7 +12,6 @@ allprojects {
 
   repositories {
     mavenCentral()
-    jcenter()
   }
 
   tasks.withType<KotlinCompile>().configureEach {
